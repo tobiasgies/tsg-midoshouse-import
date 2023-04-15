@@ -1,0 +1,4 @@
+node_modules/
+.clasp.json
+
+midos-schedule-dummy.json
