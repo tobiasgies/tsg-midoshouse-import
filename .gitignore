@@ -1,4 +1,11 @@
+# Node & Clasp
 node_modules/
 .clasp.json
+
+# JetBrains IDEs
+.idea/
+*.iws
+*.iml
+*.ipr
 
 midos-schedule-dummy.json
