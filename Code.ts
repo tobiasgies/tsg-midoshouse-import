@@ -3,35 +3,44 @@ import {SpreadsheetScheduleEntry} from "./SpreadsheetScheduleEntry";
 import {RaceId} from "./RaceId";
 
 // URL of schedule JSON on midos.house
-// TODO use real URL, currently uses dummy from Tobias' server
-const MIDOS_HOUSE_SCHEDULE_URL = "https://www.tobiasgies.de/files/midos-schedule-dummy.json";
+const MIDOS_HOUSE_GQL_URL = "https://midos.house/api/v1/graphql";
+const MIDOS_HOUSE_GQL_SHAPE = "{series(name:\"tfb\"){event(name:\"2\"){races{id,phase,round,game,start,restreamConsent,teams{members{user{id,displayName}}}}}}}";
 
 // Name of sheet that stores our imported schedule data
 const SCHEDULE_IMPORT_SHEET_NAME = "Midos.house schedule import";
 
 // Range of fields that contain our imported schedule
-const SCHEDULE_IMPORT_SHEET_RANGE = "A3:H1000";
+const SCHEDULE_IMPORT_SHEET_RANGE = "A3:I1000";
+
 
 function importScheduleFromMidosHouse() {
-    const mhSchedule = fetchScheduleData(MIDOS_HOUSE_SCHEDULE_URL);
+    const apiKey = PropertiesService.getScriptProperties().getProperty("MIDOS_HOUSE_API_KEY");
+    const mhSchedule = fetchScheduleData(MIDOS_HOUSE_GQL_URL, MIDOS_HOUSE_GQL_SHAPE, apiKey);
     const existingSchedule = fetchExistingSchedule(SCHEDULE_IMPORT_SHEET_NAME);
 
     let output = compareMidosHouseAndExistingSchedule(mhSchedule, existingSchedule);
 
-    // Sort output list by stream date/time
+    // Sort output list by stream date/time. Unscheduled races go to end of list.
     output.sort(function (a, b) {
-        if (a.scheduledStart < b.scheduledStart) return -1;
+        if (!a.scheduledStart && !b.scheduledStart) return 0;
+        else if (!b.scheduledStart) return -1;
+        else if (!a.scheduledStart) return 1;
+        else if (a.scheduledStart < b.scheduledStart) return -1;
         else if (a.scheduledStart > b.scheduledStart) return 1;
         else return 0;
     })
 
     // Overwrite entire spreadsheet with output
+    saveOutputToSpreadsheet(output, SCHEDULE_IMPORT_SHEET_NAME, SCHEDULE_IMPORT_SHEET_RANGE);
+}
+
+function saveOutputToSpreadsheet(output: SpreadsheetScheduleEntry[], sheetName: string, sheetRange: string) {
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-    const schedulingSheet = spreadsheet.getSheetByName(SCHEDULE_IMPORT_SHEET_NAME);
+    const schedulingSheet = spreadsheet.getSheetByName(sheetName);
 
     let spreadsheetData = output.map(it => it.toSpreadsheetArray());
     padWithEmptyArrays(spreadsheetData, 998);
-    schedulingSheet.getRange(SCHEDULE_IMPORT_SHEET_RANGE)
+    schedulingSheet.getRange(sheetRange)
         .clear()
         .setValues(spreadsheetData);
 }
@@ -39,26 +48,35 @@ function importScheduleFromMidosHouse() {
 function padWithEmptyArrays(spreadsheetData: any[][], targetRowCount: number) {
     const rowsToAdd = targetRowCount - spreadsheetData.length;
     for (let i = 0; i < rowsToAdd; i++) {
-        spreadsheetData.push([[], [], [], [], [], [], [], []]);
+        spreadsheetData.push([[], [], [], [], [], [], [], [], []]);
     }
 }
 
-function fetchScheduleData(sourceUrl: string): MidosHouseScheduleEntry[] {
-    // Fetch schedule JSON from midos.house
-    const request = UrlFetchApp.fetch(sourceUrl);
-    const response = JSON.parse(request.getContentText()) as any[];
+function fetchScheduleData(gqlUrl: string, gqlShape: string, apiKey: string): MidosHouseScheduleEntry[] {
+    // Fetch schedule from midos.house GraphQL API
+    const fetchUrl = encodeURI(`${gqlUrl}?query=${gqlShape}`)
+    const request = UrlFetchApp.fetch(fetchUrl, {"headers": {"X-API-Key": apiKey}});
+    const response = JSON.parse(request.getContentText());
 
     // Convert JSON rows to ScheduleEntries
     let schedule: MidosHouseScheduleEntry[] = [];
-    for (const entry of response) {
-        schedule.push(new MidosHouseScheduleEntry(entry.race_id,
-            new Date(entry.scheduled_start),
-            entry.runner1_id,
-            entry.runner1_name,
-            entry.runner2_id,
-            entry.runner2_name,
-            !!entry.is_cancelled,
-            !!entry.both_runners_consent_to_restream));
+    for (const entry of response.data.series.event.races) {
+        if (!entry.teams) {
+            console.warn(`Skipping race with ID ${entry.id} - it has no named racers, likely a qualifier.`);
+            continue;
+        }
+        const scheduledStart = (!!entry.start) ? new Date(entry.start) : null;
+        schedule.push(new MidosHouseScheduleEntry(entry.id,
+            scheduledStart,
+            entry.phase,
+            entry.round,
+            entry.game,
+            entry.teams[0].members[0].user.id,
+            entry.teams[0].members[0].user.displayName,
+            entry.teams[1].members[0].user.id,
+            entry.teams[1].members[0].user.displayName,
+            false,
+            !!entry.restreamConsent));
     }
 
     return schedule;
@@ -70,7 +88,15 @@ function fetchExistingSchedule(sheetName: string): SpreadsheetScheduleEntry[] {
 
     return schedulingSheet.getRange(SCHEDULE_IMPORT_SHEET_RANGE).getValues()
         .filter(it => !!it[0])
-        .map(it => new SpreadsheetScheduleEntry(RaceId.fromString(it[0]), it[1], it[2], it[3], it[4], it[5], !!it[6], !!it[7]));
+        .map(it => new SpreadsheetScheduleEntry(RaceId.fromString(it[0]),
+            (!!it[1]) ? it[1] : null,
+            it[2],
+            it[3],
+            it[4],
+            it[5],
+            it[6],
+            !!it[7],
+            !!it[8]));
 }
 
 function reindexExistingScheduleByMidosHouseId(existingSchedule: SpreadsheetScheduleEntry[]): SpreadsheetScheduleEntry[][] {
@@ -104,6 +130,10 @@ function compareMidosHouseAndExistingSchedule(mhSchedule: MidosHouseScheduleEntr
                 // Add unchanged entry to output list
                 output.push(spreadsheetEntry.withUpdatedNames(mhEntry));
                 console.log(`Entry from Midos House with ID ${spreadsheetEntry.raceId.toString()} is unchanged.`);
+            } else if (spreadsheetEntry.onlyNewScheduledStartWasAdded(mhEntry)) {
+                // Add entry with new scheduled start to output list
+                output.push(spreadsheetEntry.withUpdatedNames(mhEntry).withNewScheduledStart(mhEntry.scheduledStart));
+                console.info(`New scheduled start for entry with ID ${spreadsheetEntry.raceId.toString()}.`);
             } else if (spreadsheetEntry.onlyNewRestreamConsentWasGiven(mhEntry)) {
                 // Add entry with new restream consent to output list
                 output.push(spreadsheetEntry.withUpdatedNames(mhEntry).withRestreamConsent());

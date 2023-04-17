@@ -1,9 +1,11 @@
 import {RaceId} from "./RaceId";
 import {MidosHouseScheduleEntry} from "./MidosHouseScheduleEntry";
+import Type = GoogleAppsScript.Maps.Type;
 
 export class SpreadsheetScheduleEntry {
     readonly raceId: RaceId
     readonly scheduledStart: Date
+    readonly gameName: string
     readonly runner1Id: string
     readonly runner1Name: string
     readonly runner2Id: string
@@ -11,9 +13,10 @@ export class SpreadsheetScheduleEntry {
     readonly isCancelled: boolean
     readonly bothRunnersConsentToRestream: boolean
 
-    constructor(raceId: RaceId, scheduledStart: Date, runner1Id: string, runner1Name: string, runner2Id: string, runner2Name: string, isCancelled: boolean, bothRunnersConsentToRestream: boolean) {
+    constructor(raceId: RaceId, scheduledStart: Date, gameName: string, runner1Id: string, runner1Name: string, runner2Id: string, runner2Name: string, isCancelled: boolean, bothRunnersConsentToRestream: boolean) {
         this.raceId = raceId;
         this.scheduledStart = scheduledStart;
+        this.gameName = gameName;
         this.runner1Id = runner1Id;
         this.runner1Name = runner1Name;
         this.runner2Id = runner2Id;
@@ -25,6 +28,7 @@ export class SpreadsheetScheduleEntry {
     public withRaceCancelled() {
         return new SpreadsheetScheduleEntry(this.raceId,
             this.scheduledStart,
+            this.gameName,
             this.runner1Id,
             this.runner1Name,
             this.runner2Id,
@@ -36,6 +40,7 @@ export class SpreadsheetScheduleEntry {
     public withRestreamConsent() {
         return new SpreadsheetScheduleEntry(this.raceId,
             this.scheduledStart,
+            this.gameName,
             this.runner1Id,
             this.runner1Name,
             this.runner2Id,
@@ -44,9 +49,27 @@ export class SpreadsheetScheduleEntry {
             true)
     }
 
+    public withNewScheduledStart(scheduledStart: Date) {
+        if (!!this.scheduledStart) {
+            throw new Error("This race already has a scheduled start, you may not change it. Cancel this race and create a new instance.");
+        } else if (!scheduledStart) {
+            throw new TypeError("You may not delete the scheduled start of this race. Cancel this race and create a new instance.");
+        }
+        return new SpreadsheetScheduleEntry(this.raceId,
+            scheduledStart,
+            this.gameName,
+            this.runner1Id,
+            this.runner1Name,
+            this.runner2Id,
+            this.runner2Name,
+            this.isCancelled,
+            this.bothRunnersConsentToRestream)
+    }
+
     public withUpdatedNames(mhEntry: MidosHouseScheduleEntry) {
         return new SpreadsheetScheduleEntry(this.raceId,
             this.scheduledStart,
+            mhEntry.getGameName(),
             this.runner1Id,
             mhEntry.runner1Name,
             this.runner2Id,
@@ -57,7 +80,14 @@ export class SpreadsheetScheduleEntry {
 
     public matches(mhEntry: MidosHouseScheduleEntry): boolean {
         return this.raceDataMatches(mhEntry) &&
+            (!this.scheduledStart && !mhEntry.scheduledStart ||
+                (!!this.scheduledStart && this.scheduledStart.getTime() == mhEntry.scheduledStart?.getTime())) &&
             this.bothRunnersConsentToRestream == mhEntry.bothRunnersConsentToRestream
+    }
+
+    public onlyNewScheduledStartWasAdded(mhEntry: MidosHouseScheduleEntry): boolean {
+        return this.raceDataMatches(mhEntry) &&
+            !this.scheduledStart && !!mhEntry.scheduledStart
     }
 
     public onlyNewRestreamConsentWasGiven(mhEntry: MidosHouseScheduleEntry): boolean {
@@ -70,6 +100,7 @@ export class SpreadsheetScheduleEntry {
         return [
             this.raceId.toString(),
             this.scheduledStart,
+            this.gameName,
             this.runner1Id,
             this.runner1Name,
             this.runner2Id,
@@ -81,7 +112,6 @@ export class SpreadsheetScheduleEntry {
 
     private raceDataMatches(mhEntry: MidosHouseScheduleEntry): boolean {
         return this.raceId.midosHouseId == mhEntry.id &&
-            this.scheduledStart.getTime() == mhEntry.scheduledStart.getTime() &&
             this.runner1Id == mhEntry.runner1Id &&
             this.runner2Id == mhEntry.runner2Id &&
             this.isCancelled == mhEntry.isCancelled;
@@ -90,6 +120,7 @@ export class SpreadsheetScheduleEntry {
     static fromMidosHouseEntryWithDiscriminator(mhEntry: MidosHouseScheduleEntry, discriminator: number) {
         return new SpreadsheetScheduleEntry(new RaceId(mhEntry.id, discriminator),
             mhEntry.scheduledStart,
+            mhEntry.getGameName(),
             mhEntry.runner1Id,
             mhEntry.runner1Name,
             mhEntry.runner2Id,
