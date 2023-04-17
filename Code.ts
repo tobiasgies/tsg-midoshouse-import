@@ -16,7 +16,7 @@ const SCHEDULE_IMPORT_SHEET_RANGE = "A3:I1000";
 function importScheduleFromMidosHouse() {
     const apiKey = PropertiesService.getScriptProperties().getProperty("MIDOS_HOUSE_API_KEY");
     const mhSchedule = fetchScheduleData(MIDOS_HOUSE_GQL_URL, MIDOS_HOUSE_GQL_SHAPE, apiKey);
-    const existingSchedule = fetchExistingSchedule(SCHEDULE_IMPORT_SHEET_NAME);
+    const existingSchedule = fetchExistingSchedule(SCHEDULE_IMPORT_SHEET_NAME, SCHEDULE_IMPORT_SHEET_RANGE);
 
     let output = compareMidosHouseAndExistingSchedule(mhSchedule, existingSchedule);
 
@@ -82,11 +82,11 @@ function fetchScheduleData(gqlUrl: string, gqlShape: string, apiKey: string): Mi
     return schedule;
 }
 
-function fetchExistingSchedule(sheetName: string): SpreadsheetScheduleEntry[] {
+function fetchExistingSchedule(sheetName: string, sheetRange: string): SpreadsheetScheduleEntry[] {
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     const schedulingSheet = spreadsheet.getSheetByName(sheetName);
 
-    return schedulingSheet.getRange(SCHEDULE_IMPORT_SHEET_RANGE).getValues()
+    return schedulingSheet.getRange(sheetRange).getValues()
         .filter(it => !!it[0])
         .map(it => new SpreadsheetScheduleEntry(RaceId.fromString(it[0]),
             (!!it[1]) ? it[1] : null,
