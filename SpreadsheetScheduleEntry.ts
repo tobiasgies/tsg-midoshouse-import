@@ -1,6 +1,5 @@
 import {RaceId} from "./RaceId";
 import {MidosHouseScheduleEntry} from "./MidosHouseScheduleEntry";
-import Type = GoogleAppsScript.Maps.Type;
 
 export class SpreadsheetScheduleEntry {
     readonly raceId: RaceId
