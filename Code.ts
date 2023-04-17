@@ -155,6 +155,7 @@ function compareMidosHouseAndExistingSchedule(mhSchedule: MidosHouseScheduleEntr
     let racesDeletedFromMidosHouse = existingSchedule.filter(it => !mhIdsInSchedule.includes(it.raceId.midosHouseId));
     for (const spreadsheetEntry of racesDeletedFromMidosHouse) {
         output.push(spreadsheetEntry.withRaceCancelled());
+        console.warn(`Race with ID ${spreadsheetEntry.raceId.toString()} deleted from Midos.house, cancelling.`);
     }
     return output;
 }
