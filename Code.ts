@@ -4,7 +4,7 @@ import {RaceId} from "./RaceId";
 
 // URL of schedule JSON on midos.house
 const MIDOS_HOUSE_GQL_URL = "https://midos.house/api/v1/graphql";
-const MIDOS_HOUSE_GQL_SHAPE = "{series(name:\"s\"){event(name:\"7cc\"){races{id,phase,round,game,start,restreamConsent,teams{name,members{user{id,displayName}}}}}}}";
+const MIDOS_HOUSE_GQL_SHAPE = "{series(name:\"s\"){event(name:\"7cc\"){races{id,phase,round,game,start,restreamConsent,teams{name,members{user{id,displayName,racetimeId}}}}}}}";
 
 // Name of sheet that stores our imported schedule data
 const SCHEDULE_IMPORT_SHEET_NAME = "Midos.house schedule import";
