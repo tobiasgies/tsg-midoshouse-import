@@ -141,7 +141,8 @@ export class SpreadsheetScheduleEntry {
             this.runner2RacetimeId,
             this.runner2Name,
             this.isCancelled,
-            this.bothRunnersConsentToRestream
+            this.bothRunnersConsentToRestream,
+            this.scheduleUpdatedAt
         ];
     }
 
