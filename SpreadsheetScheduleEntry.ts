@@ -68,8 +68,8 @@ export class SpreadsheetScheduleEntry {
             this.runner1Id,
             this.runner1RacetimeId,
             this.runner1Name,
-            this.runner2RacetimeId,
             this.runner2Id,
+            this.runner2RacetimeId,
             this.runner2Name,
             this.isCancelled,
             this.bothRunnersConsentToRestream)
