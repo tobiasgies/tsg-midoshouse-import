@@ -10,7 +10,7 @@ const MIDOS_HOUSE_GQL_SHAPE = "{series(name:\"s\"){event(name:\"7cc\"){races{id,
 const SCHEDULE_IMPORT_SHEET_NAME = "Midos.house schedule import";
 
 // Range of fields that contain our imported schedule
-const SCHEDULE_IMPORT_SHEET_RANGE = "A3:I1000";
+const SCHEDULE_IMPORT_SHEET_RANGE = "A3:K1000";
 
 
 function importScheduleFromMidosHouse() {
@@ -48,7 +48,7 @@ function saveOutputToSpreadsheet(output: SpreadsheetScheduleEntry[], sheetName: 
 function padWithEmptyArrays(spreadsheetData: any[][], targetRowCount: number) {
     const rowsToAdd = targetRowCount - spreadsheetData.length;
     for (let i = 0; i < rowsToAdd; i++) {
-        spreadsheetData.push([[], [], [], [], [], [], [], [], []]);
+        spreadsheetData.push([[], [], [], [], [], [], [], [], [], [], []]);
     }
 }
 
@@ -72,8 +72,10 @@ function fetchScheduleData(gqlUrl: string, gqlShape: string, apiKey: string): Mi
             entry.round,
             entry.game,
             entry.teams[0].members[0].user.id,
+            entry.teams[0].members[0].user.racetimeId,
             entry.teams[0].members[0].user.displayName,
             entry.teams[1].members[0].user.id,
+            entry.teams[1].members[0].user.racetimeId,
             entry.teams[1].members[0].user.displayName,
             false,
             !!entry.restreamConsent));
@@ -95,8 +97,10 @@ function fetchExistingSchedule(sheetName: string, sheetRange: string): Spreadshe
             it[4],
             it[5],
             it[6],
-            !!it[7],
-            !!it[8]));
+            it[7],
+            it[8],
+            !!it[9],
+            !!it[10]));
 }
 
 function reindexExistingScheduleByMidosHouseId(existingSchedule: SpreadsheetScheduleEntry[]): SpreadsheetScheduleEntry[][] {
@@ -128,23 +132,23 @@ function compareMidosHouseAndExistingSchedule(mhSchedule: MidosHouseScheduleEntr
             const spreadsheetEntry = it as SpreadsheetScheduleEntry;
             if (spreadsheetEntry.matches(mhEntry)) {
                 // Add unchanged entry to output list
-                output.push(spreadsheetEntry.withUpdatedNames(mhEntry));
+                output.push(spreadsheetEntry.withUpdatedRunnerData(mhEntry));
                 console.log(`Entry from Midos House with ID ${spreadsheetEntry.raceId.toString()} is unchanged.`);
             } else if (spreadsheetEntry.onlyNewScheduledStartWasAdded(mhEntry)) {
                 // Add entry with new scheduled start to output list
-                output.push(spreadsheetEntry.withUpdatedNames(mhEntry).withNewScheduledStart(mhEntry.scheduledStart));
+                output.push(spreadsheetEntry.withUpdatedRunnerData(mhEntry).withNewScheduledStart(mhEntry.scheduledStart));
                 console.info(`New scheduled start for entry with ID ${spreadsheetEntry.raceId.toString()}.`);
             } else if (spreadsheetEntry.onlyNewRestreamConsentWasGiven(mhEntry)) {
                 // Add entry with new restream consent to output list
-                output.push(spreadsheetEntry.withUpdatedNames(mhEntry).withRestreamConsent());
+                output.push(spreadsheetEntry.withUpdatedRunnerData(mhEntry).withRestreamConsent());
                 console.info(`New restream consent for entry with ID ${spreadsheetEntry.raceId.toString()}.`);
             } else if (spreadsheetEntry.isCancelled) {
                 // This spreadsheet entry was already outdated and marked as cancelled. Update names and move on.
-                output.push(spreadsheetEntry.withUpdatedNames(mhEntry));
+                output.push(spreadsheetEntry.withUpdatedRunnerData(mhEntry));
                 console.log(`Encountered outdated spreadsheet entry with ID ${spreadsheetEntry.raceId.toString()}.`);
             } else {
                 // Scheduled time or runner consent has changed. Cancel old entry, add new entry to output list.
-                output.push(spreadsheetEntry.withUpdatedNames(mhEntry).withRaceCancelled());
+                output.push(spreadsheetEntry.withUpdatedRunnerData(mhEntry).withRaceCancelled());
                 output.push(SpreadsheetScheduleEntry.fromMidosHouseEntryWithDiscriminator(mhEntry, spreadsheetEntry.raceId.nextDiscriminator()));
                 console.warn(`Schedule change received from Midos House for entry with ID ${spreadsheetEntry.raceId.toString()}`);
             }
