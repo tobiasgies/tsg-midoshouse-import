@@ -10,7 +10,7 @@ const MIDOS_HOUSE_GQL_SHAPE = "{series(name:\"s\"){event(name:\"7cc\"){races{id,
 const SCHEDULE_IMPORT_SHEET_NAME = "Midos.house schedule import";
 
 // Range of fields that contain our imported schedule
-const SCHEDULE_IMPORT_SHEET_RANGE = "A3:J1000";
+const SCHEDULE_IMPORT_SHEET_RANGE = "A3:L1000";
 
 
 function importScheduleFromMidosHouse() {
