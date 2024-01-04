@@ -13,8 +13,20 @@ export class SpreadsheetScheduleEntry {
     readonly runner2Name: string
     readonly isCancelled: boolean
     readonly bothRunnersConsentToRestream: boolean
+    readonly scheduleUpdatedAt: Date
 
-    constructor(raceId: RaceId, scheduledStart: Date, gameName: string, runner1Id: string, runner1RacetimeId: string, runner1Name: string, runner2Id: string, runner2RacetimeId: string, runner2Name: string, isCancelled: boolean, bothRunnersConsentToRestream: boolean) {
+    constructor(raceId: RaceId,
+                scheduledStart: Date,
+                gameName: string,
+                runner1Id: string,
+                runner1RacetimeId: string,
+                runner1Name: string,
+                runner2Id: string,
+                runner2RacetimeId: string,
+                runner2Name: string,
+                isCancelled: boolean,
+                bothRunnersConsentToRestream: boolean,
+                scheduleUpdatedAt: Date) {
         this.raceId = raceId;
         this.scheduledStart = scheduledStart;
         this.gameName = gameName;
@@ -26,6 +38,7 @@ export class SpreadsheetScheduleEntry {
         this.runner2Name = runner2Name;
         this.isCancelled = isCancelled;
         this.bothRunnersConsentToRestream = bothRunnersConsentToRestream;
+        this.scheduleUpdatedAt = scheduleUpdatedAt;
     }
 
     public withRaceCancelled() {
@@ -39,7 +52,8 @@ export class SpreadsheetScheduleEntry {
             this.runner2RacetimeId,
             this.runner2Name,
             true,
-            this.bothRunnersConsentToRestream)
+            this.bothRunnersConsentToRestream,
+            this.scheduleUpdatedAt)
     }
 
     public withRestreamConsent() {
@@ -53,17 +67,18 @@ export class SpreadsheetScheduleEntry {
             this.runner2RacetimeId,
             this.runner2Name,
             this.isCancelled,
-            true)
+            true,
+            this.scheduleUpdatedAt)
     }
 
-    public withNewScheduledStart(scheduledStart: Date) {
+    public withNewScheduledStart(mhEntry: MidosHouseScheduleEntry) {
         if (!!this.scheduledStart) {
             throw new Error("This race already has a scheduled start, you may not change it. Cancel this race and create a new instance.");
-        } else if (!scheduledStart) {
+        } else if (!mhEntry.scheduledStart || !mhEntry.scheduleUpdatedAt) {
             throw new TypeError("You may not delete the scheduled start of this race. Cancel this race and create a new instance.");
         }
         return new SpreadsheetScheduleEntry(this.raceId,
-            scheduledStart,
+            mhEntry.scheduledStart,
             this.gameName,
             this.runner1Id,
             this.runner1RacetimeId,
@@ -72,10 +87,16 @@ export class SpreadsheetScheduleEntry {
             this.runner2RacetimeId,
             this.runner2Name,
             this.isCancelled,
-            this.bothRunnersConsentToRestream)
+            this.bothRunnersConsentToRestream,
+            mhEntry.scheduleUpdatedAt)
     }
 
-    public withUpdatedRunnerData(mhEntry: MidosHouseScheduleEntry) {
+    public withUpdatedNoncriticalData(mhEntry: MidosHouseScheduleEntry) {
+        let scheduleUpdatedAt = this.scheduleUpdatedAt;
+        if (scheduleUpdatedAt == null && !this.isCancelled && !!mhEntry.scheduleUpdatedAt) {
+            // Update scheduling information with data that we previously weren't tracking.
+            scheduleUpdatedAt = mhEntry.scheduleUpdatedAt
+        }
         return new SpreadsheetScheduleEntry(this.raceId,
             this.scheduledStart,
             mhEntry.getGameName(),
@@ -86,7 +107,8 @@ export class SpreadsheetScheduleEntry {
             mhEntry.runner2RacetimeId,
             mhEntry.runner2Name,
             this.isCancelled,
-            this.bothRunnersConsentToRestream)
+            this.bothRunnersConsentToRestream,
+            scheduleUpdatedAt)
     }
 
     public matches(mhEntry: MidosHouseScheduleEntry): boolean {
@@ -141,6 +163,7 @@ export class SpreadsheetScheduleEntry {
             mhEntry.runner2RacetimeId,
             mhEntry.runner2Name,
             mhEntry.isCancelled,
-            mhEntry.bothRunnersConsentToRestream);
+            mhEntry.bothRunnersConsentToRestream,
+            mhEntry.scheduleUpdatedAt);
     }
 }

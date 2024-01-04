@@ -12,6 +12,7 @@ export class MidosHouseScheduleEntry {
     readonly runner2Name: string;
     readonly isCancelled: boolean;
     readonly bothRunnersConsentToRestream: boolean;
+    readonly scheduleUpdatedAt: Date;
 
     constructor(id: string,
                 scheduledStart: Date,
@@ -25,7 +26,8 @@ export class MidosHouseScheduleEntry {
                 runner2RacetimeId: string,
                 runner2Name: string,
                 isCancelled: boolean,
-                bothRunnersConsentToRestream: boolean) {
+                bothRunnersConsentToRestream: boolean,
+                scheduleUpdatedAt: Date) {
         this.id = id;
         this.scheduledStart = scheduledStart;
         this.phase = phase;
@@ -39,6 +41,7 @@ export class MidosHouseScheduleEntry {
         this.runner2Name = runner2Name;
         this.isCancelled = isCancelled;
         this.bothRunnersConsentToRestream = bothRunnersConsentToRestream;
+        this.scheduleUpdatedAt = scheduleUpdatedAt;
     }
 
     public getGameName(): string {

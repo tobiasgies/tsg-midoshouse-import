@@ -4,13 +4,13 @@ import {RaceId} from "./RaceId";
 
 // URL of schedule JSON on midos.house
 const MIDOS_HOUSE_GQL_URL = "https://midos.house/api/v1/graphql";
-const MIDOS_HOUSE_GQL_SHAPE = "{series(name:\"s\"){event(name:\"7cc\"){races{id,phase,round,game,start,restreamConsent,teams{name,members{user{id,displayName,racetimeId}}}}}}}";
+const MIDOS_HOUSE_GQL_SHAPE = "{series(name:\"s\"){event(name:\"7cc\"){races{id,phase,round,game,start,restreamConsent,scheduleUpdatedAt,teams{name,members{user{id,displayName,racetimeId}}}}}}}";
 
 // Name of sheet that stores our imported schedule data
 const SCHEDULE_IMPORT_SHEET_NAME = "Midos.house schedule import";
 
 // Range of fields that contain our imported schedule
-const SCHEDULE_IMPORT_SHEET_RANGE = "A3:K1000";
+const SCHEDULE_IMPORT_SHEET_RANGE = "A3:J1000";
 
 
 function importScheduleFromMidosHouse() {
@@ -48,7 +48,7 @@ function saveOutputToSpreadsheet(output: SpreadsheetScheduleEntry[], sheetName: 
 function padWithEmptyArrays(spreadsheetData: any[][], targetRowCount: number) {
     const rowsToAdd = targetRowCount - spreadsheetData.length;
     for (let i = 0; i < rowsToAdd; i++) {
-        spreadsheetData.push([[], [], [], [], [], [], [], [], [], [], []]);
+        spreadsheetData.push([[], [], [], [], [], [], [], [], [], [], [], []]);
     }
 }
 
@@ -66,6 +66,7 @@ function fetchScheduleData(gqlUrl: string, gqlShape: string, apiKey: string): Mi
             continue;
         }
         const scheduledStart = (!!entry.start) ? new Date(entry.start) : null;
+        const scheduleUpdatedAt = (!!entry.scheduleUpdatedAt) ? new Date(entry.scheduleUpdatedAt) : null;
         schedule.push(new MidosHouseScheduleEntry(entry.id,
             scheduledStart,
             entry.phase,
@@ -78,7 +79,8 @@ function fetchScheduleData(gqlUrl: string, gqlShape: string, apiKey: string): Mi
             entry.teams[1].members[0].user.racetimeId,
             entry.teams[1].members[0].user.displayName,
             false,
-            !!entry.restreamConsent));
+            !!entry.restreamConsent,
+            scheduleUpdatedAt));
     }
 
     return schedule;
@@ -100,7 +102,8 @@ function fetchExistingSchedule(sheetName: string, sheetRange: string): Spreadshe
             it[7],
             it[8],
             !!it[9],
-            !!it[10]));
+            !!it[10],
+            (!!it[11]) ? it[11] : null));
 }
 
 function reindexExistingScheduleByMidosHouseId(existingSchedule: SpreadsheetScheduleEntry[]): SpreadsheetScheduleEntry[][] {
@@ -132,23 +135,23 @@ function compareMidosHouseAndExistingSchedule(mhSchedule: MidosHouseScheduleEntr
             const spreadsheetEntry = it as SpreadsheetScheduleEntry;
             if (spreadsheetEntry.matches(mhEntry)) {
                 // Add unchanged entry to output list
-                output.push(spreadsheetEntry.withUpdatedRunnerData(mhEntry));
+                output.push(spreadsheetEntry.withUpdatedNoncriticalData(mhEntry));
                 console.log(`Entry from Midos House with ID ${spreadsheetEntry.raceId.toString()} is unchanged.`);
             } else if (spreadsheetEntry.onlyNewScheduledStartWasAdded(mhEntry)) {
                 // Add entry with new scheduled start to output list
-                output.push(spreadsheetEntry.withUpdatedRunnerData(mhEntry).withNewScheduledStart(mhEntry.scheduledStart));
+                output.push(spreadsheetEntry.withUpdatedNoncriticalData(mhEntry).withNewScheduledStart(mhEntry));
                 console.info(`New scheduled start for entry with ID ${spreadsheetEntry.raceId.toString()}.`);
             } else if (spreadsheetEntry.onlyNewRestreamConsentWasGiven(mhEntry)) {
                 // Add entry with new restream consent to output list
-                output.push(spreadsheetEntry.withUpdatedRunnerData(mhEntry).withRestreamConsent());
+                output.push(spreadsheetEntry.withUpdatedNoncriticalData(mhEntry).withRestreamConsent());
                 console.info(`New restream consent for entry with ID ${spreadsheetEntry.raceId.toString()}.`);
             } else if (spreadsheetEntry.isCancelled) {
                 // This spreadsheet entry was already outdated and marked as cancelled. Update names and move on.
-                output.push(spreadsheetEntry.withUpdatedRunnerData(mhEntry));
+                output.push(spreadsheetEntry.withUpdatedNoncriticalData(mhEntry));
                 console.log(`Encountered outdated spreadsheet entry with ID ${spreadsheetEntry.raceId.toString()}.`);
             } else {
                 // Scheduled time or runner consent has changed. Cancel old entry, add new entry to output list.
-                output.push(spreadsheetEntry.withUpdatedRunnerData(mhEntry).withRaceCancelled());
+                output.push(spreadsheetEntry.withUpdatedNoncriticalData(mhEntry).withRaceCancelled());
                 output.push(SpreadsheetScheduleEntry.fromMidosHouseEntryWithDiscriminator(mhEntry, spreadsheetEntry.raceId.nextDiscriminator()));
                 console.warn(`Schedule change received from Midos House for entry with ID ${spreadsheetEntry.raceId.toString()}`);
             }
