@@ -93,7 +93,7 @@ export class SpreadsheetScheduleEntry {
 
     public withUpdatedNoncriticalData(mhEntry: MidosHouseScheduleEntry) {
         let scheduleUpdatedAt = this.scheduleUpdatedAt;
-        if (scheduleUpdatedAt == null && !this.isCancelled && !!mhEntry.scheduleUpdatedAt) {
+        if (!scheduleUpdatedAt && !this.isCancelled && !!mhEntry.scheduleUpdatedAt) {
             // Update scheduling information with data that we previously weren't tracking.
             scheduleUpdatedAt = mhEntry.scheduleUpdatedAt
         }
