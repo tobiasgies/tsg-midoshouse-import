@@ -146,6 +146,23 @@ export class SpreadsheetScheduleEntry {
         ];
     }
 
+    public toString(): string {
+        return `SpreadsheetScheduleEntry {
+            raceId: ${this.raceId?.toString()},
+            scheduledStart: ${this.scheduledStart?.toISOString()},
+            gameName: ${this.gameName},
+            runner1Id: ${this.runner1Id},
+            runner1RacetimeId: ${this.runner1RacetimeId},
+            runner1Name: ${this.runner1Name},
+            runner2Id: ${this.runner2Id},
+            runner2RacetimeId: ${this.runner2RacetimeId},
+            runner2Name: ${this.runner2Name},
+            isCancelled: ${this.isCancelled},
+            bothRunnersConsentToRestream: ${this.bothRunnersConsentToRestream},
+            scheduleUpdatedAt: ${this.scheduleUpdatedAt?.toISOString()}
+        }`;
+    }
+
     private raceDataMatches(mhEntry: MidosHouseScheduleEntry): boolean {
         return this.raceId.midosHouseId == mhEntry.id &&
             this.runner1Id == mhEntry.runner1Id &&
