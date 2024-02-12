@@ -74,9 +74,11 @@ export class SpreadsheetScheduleEntry {
     public withNewScheduledStart(mhEntry: MidosHouseScheduleEntry) {
         if (!!this.scheduledStart) {
             throw new Error("This race already has a scheduled start, you may not change it. Cancel this race and create a new instance.");
-        } else if (!mhEntry.scheduledStart || !mhEntry.scheduleUpdatedAt) {
-            throw new TypeError("You may not delete the scheduled start of this race. Cancel this race and create a new instance.");
+        } else if (!mhEntry.scheduledStart) {
+            throw new TypeError("No scheduled start date given in Midos.house entry.");
         }
+        // Fallback for races that were manually recorded. They may not have scheduleUpdatedAt set.
+        const scheduleUpdatedAt = mhEntry.scheduleUpdatedAt ?? mhEntry.scheduledStart;
         return new SpreadsheetScheduleEntry(this.raceId,
             mhEntry.scheduledStart,
             this.gameName,
@@ -88,7 +90,7 @@ export class SpreadsheetScheduleEntry {
             this.runner2Name,
             this.isCancelled,
             this.bothRunnersConsentToRestream,
-            mhEntry.scheduleUpdatedAt)
+            scheduleUpdatedAt)
     }
 
     public withUpdatedNoncriticalData(mhEntry: MidosHouseScheduleEntry) {
