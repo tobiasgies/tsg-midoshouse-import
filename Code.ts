@@ -1,6 +1,7 @@
 import {MidosHouseScheduleEntry} from "./MidosHouseScheduleEntry";
 import {SpreadsheetScheduleEntry} from "./SpreadsheetScheduleEntry";
 import {RaceId} from "./RaceId";
+import {SupplementalData} from "./SupplementalData";
 
 // URL of schedule JSON on midos.house
 const MIDOS_HOUSE_GQL_URL = "https://midos.house/api/v1/graphql";
@@ -10,15 +11,23 @@ const MIDOS_HOUSE_GQL_SHAPE = "{series(name:\"s\"){event(name:\"7cc\"){races{id,
 const SCHEDULE_IMPORT_SHEET_NAME = "Midos.house schedule import";
 
 // Range of fields that contain our imported schedule
-const SCHEDULE_IMPORT_SHEET_RANGE = "A3:L1000";
+const SCHEDULE_IMPORT_SHEET_RANGE = "A3:P1000";
 
+// Name of sheet that stores supplemental data that can't be obtained from Midos.house
+const SUPPLEMENTAL_SHEET_NAME = "Supplemental data";
+
+// Range of fields that contain our supplemental data
+const SUPPLEMENTAL_SHEET_RANGE = "A2:D1000";
 
 function importScheduleFromMidosHouse() {
     const apiKey = PropertiesService.getScriptProperties().getProperty("MIDOS_HOUSE_API_KEY");
     const mhSchedule = fetchScheduleData(MIDOS_HOUSE_GQL_URL, MIDOS_HOUSE_GQL_SHAPE, apiKey);
     const existingSchedule = fetchExistingSchedule(SCHEDULE_IMPORT_SHEET_NAME, SCHEDULE_IMPORT_SHEET_RANGE);
+    const supplemental = fetchSupplementalData(SUPPLEMENTAL_SHEET_NAME, SUPPLEMENTAL_SHEET_RANGE);
 
-    let output = compareMidosHouseAndExistingSchedule(mhSchedule, existingSchedule);
+    let output = compareMidosHouseAndExistingSchedule(mhSchedule, existingSchedule).map(
+        it => it.withSupplementalData(supplemental.get(it.runner1Id), supplemental.get(it.runner2Id))
+    );
 
     // Sort output list by stream date/time. Unscheduled races go to end of list.
     output.sort(function (a, b) {
@@ -48,7 +57,7 @@ function saveOutputToSpreadsheet(output: SpreadsheetScheduleEntry[], sheetName: 
 function padWithEmptyArrays(spreadsheetData: any[][], targetRowCount: number) {
     const rowsToAdd = targetRowCount - spreadsheetData.length;
     for (let i = 0; i < rowsToAdd; i++) {
-        spreadsheetData.push([[], [], [], [], [], [], [], [], [], [], [], []]);
+        spreadsheetData.push([[], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []]);
     }
 }
 
@@ -84,6 +93,16 @@ function fetchScheduleData(gqlUrl: string, gqlShape: string, apiKey: string): Mi
     }
 
     return schedule;
+}
+
+function fetchSupplementalData(sheetName: string, sheetRange: string): Map<string, SupplementalData> {
+    const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    const supplementalSheet = spreadsheet.getSheetByName(sheetName);
+
+    return new Map(supplementalSheet.getRange(sheetRange).getValues()
+        .filter(it => !!it[0])
+        .map(it => new SupplementalData(it[0], it[2], it[3]))
+        .map(it => [it.runnerId, it]));
 }
 
 function fetchExistingSchedule(sheetName: string, sheetRange: string): SpreadsheetScheduleEntry[] {

@@ -1,5 +1,6 @@
 import {RaceId} from "./RaceId";
 import {MidosHouseScheduleEntry} from "./MidosHouseScheduleEntry";
+import {SupplementalData} from "./SupplementalData";
 
 export class SpreadsheetScheduleEntry {
     readonly raceId: RaceId
@@ -8,9 +9,11 @@ export class SpreadsheetScheduleEntry {
     readonly runner1Id: string
     readonly runner1RacetimeId: string
     readonly runner1Name: string
+    readonly runner1Supplemental?: SupplementalData
     readonly runner2Id: string
     readonly runner2RacetimeId: string
     readonly runner2Name: string
+    readonly runner2Supplemental?: SupplementalData
     readonly isCancelled: boolean
     readonly bothRunnersConsentToRestream: boolean
     readonly scheduleUpdatedAt: Date
@@ -26,7 +29,9 @@ export class SpreadsheetScheduleEntry {
                 runner2Name: string,
                 isCancelled: boolean,
                 bothRunnersConsentToRestream: boolean,
-                scheduleUpdatedAt: Date) {
+                scheduleUpdatedAt: Date,
+                runner1Supplemental?: SupplementalData,
+                runner2Supplemental?: SupplementalData) {
         this.raceId = raceId;
         this.scheduledStart = scheduledStart;
         this.gameName = gameName;
@@ -39,6 +44,8 @@ export class SpreadsheetScheduleEntry {
         this.isCancelled = isCancelled;
         this.bothRunnersConsentToRestream = bothRunnersConsentToRestream;
         this.scheduleUpdatedAt = scheduleUpdatedAt;
+        this.runner1Supplemental = runner1Supplemental;
+        this.runner2Supplemental = runner2Supplemental;
     }
 
     public withRaceCancelled() {
@@ -53,7 +60,9 @@ export class SpreadsheetScheduleEntry {
             this.runner2Name,
             true,
             this.bothRunnersConsentToRestream,
-            this.scheduleUpdatedAt)
+            this.scheduleUpdatedAt,
+            this.runner1Supplemental,
+            this.runner2Supplemental)
     }
 
     public withRestreamConsent() {
@@ -68,7 +77,9 @@ export class SpreadsheetScheduleEntry {
             this.runner2Name,
             this.isCancelled,
             true,
-            this.scheduleUpdatedAt)
+            this.scheduleUpdatedAt,
+            this.runner1Supplemental,
+            this.runner2Supplemental)
     }
 
     public withNewScheduledStart(mhEntry: MidosHouseScheduleEntry) {
@@ -90,7 +101,9 @@ export class SpreadsheetScheduleEntry {
             this.runner2Name,
             this.isCancelled,
             this.bothRunnersConsentToRestream,
-            scheduleUpdatedAt)
+            scheduleUpdatedAt,
+            this.runner1Supplemental,
+            this.runner2Supplemental)
     }
 
     public withUpdatedNoncriticalData(mhEntry: MidosHouseScheduleEntry) {
@@ -110,7 +123,9 @@ export class SpreadsheetScheduleEntry {
             mhEntry.runner2Name,
             this.isCancelled,
             this.bothRunnersConsentToRestream,
-            scheduleUpdatedAt)
+            scheduleUpdatedAt,
+            this.runner1Supplemental,
+            this.runner2Supplemental)
     }
 
     public matches(mhEntry: MidosHouseScheduleEntry): boolean {
@@ -144,7 +159,11 @@ export class SpreadsheetScheduleEntry {
             this.runner2Name,
             this.isCancelled,
             this.bothRunnersConsentToRestream,
-            this.scheduleUpdatedAt
+            this.scheduleUpdatedAt,
+            this.runner1Supplemental?.qualifierRank,
+            this.runner1Supplemental?.country,
+            this.runner2Supplemental?.qualifierRank,
+            this.runner2Supplemental?.country
         ];
     }
 
@@ -156,9 +175,11 @@ export class SpreadsheetScheduleEntry {
             runner1Id: ${this.runner1Id},
             runner1RacetimeId: ${this.runner1RacetimeId},
             runner1Name: ${this.runner1Name},
+            runner1Supplemental: ${this.runner1Supplemental?.toString()},
             runner2Id: ${this.runner2Id},
             runner2RacetimeId: ${this.runner2RacetimeId},
             runner2Name: ${this.runner2Name},
+            runner2Supplemental: ${this.runner2Supplemental?.toString()},
             isCancelled: ${this.isCancelled},
             bothRunnersConsentToRestream: ${this.bothRunnersConsentToRestream},
             scheduleUpdatedAt: ${this.scheduleUpdatedAt?.toISOString()}
@@ -185,5 +206,22 @@ export class SpreadsheetScheduleEntry {
             mhEntry.isCancelled,
             mhEntry.bothRunnersConsentToRestream,
             mhEntry.scheduleUpdatedAt);
+    }
+
+    withSupplementalData(runner1Supplemental?: SupplementalData, runner2Supplemental?: SupplementalData) {
+        return new SpreadsheetScheduleEntry(this.raceId,
+            this.scheduledStart,
+            this.gameName,
+            this.runner1Id,
+            this.runner1RacetimeId,
+            this.runner1Name,
+            this.runner2Id,
+            this.runner2RacetimeId,
+            this.runner2Name,
+            this.isCancelled,
+            this.bothRunnersConsentToRestream,
+            this.scheduleUpdatedAt,
+            runner1Supplemental,
+            runner2Supplemental)
     }
 }
