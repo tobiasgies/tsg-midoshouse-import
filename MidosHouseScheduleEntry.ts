@@ -47,7 +47,7 @@ export class MidosHouseScheduleEntry {
     public getGameName(): string {
         let gameName = `${this.phase} ${this.round}`;
         if (!!this.game) {
-            gameName = gameName + ` G${this.game}`;
+            gameName = gameName + ` Game ${this.game}`;
         }
         return gameName;
     }
