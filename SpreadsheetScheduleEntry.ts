@@ -129,9 +129,9 @@ export class SinglePlayerSpreadsheetScheduleEntry extends SpreadsheetScheduleEnt
 
     public override withUpdatedNoncriticalData(mhEntry: MidosHouseScheduleEntry) {
         let scheduleUpdatedAt = this.scheduleUpdatedAt;
-        if (!scheduleUpdatedAt && !this.isCancelled && !!mhEntry.scheduleUpdatedAt) {
+        if (!scheduleUpdatedAt && !this.isCancelled) {
             // Update scheduling information with data that we previously weren't tracking.
-            scheduleUpdatedAt = mhEntry.scheduleUpdatedAt
+            scheduleUpdatedAt = mhEntry.scheduleUpdatedAt ?? mhEntry.scheduledStart
         }
         return new SinglePlayerSpreadsheetScheduleEntry(this.raceId,
             this.scheduledStart,
@@ -226,7 +226,8 @@ export class SinglePlayerSpreadsheetScheduleEntry extends SpreadsheetScheduleEnt
             mhEntry.teams[1].players[0].name,
             mhEntry.isCancelled,
             mhEntry.bothRunnersConsentToRestream,
-            mhEntry.scheduleUpdatedAt);
+            // Fallback for races that were manually recorded. They may not have scheduleUpdatedAt set.
+            mhEntry.scheduleUpdatedAt ?? mhEntry.scheduledStart);
     }
 
     withSupplementalData(runner1Supplemental?: SupplementalData, runner2Supplemental?: SupplementalData) {
