@@ -5,10 +5,10 @@ import {SupplementalData} from "./SupplementalData";
 
 // URL of schedule JSON on midos.house
 const MIDOS_HOUSE_GQL_URL = "https://midos.house/api/v1/graphql";
-const MIDOS_HOUSE_GQL_SHAPE = "{series(name:\"s\"){event(name:\"7cc\"){races{id,phase,round,game,start,restreamConsent,scheduleUpdatedAt,teams{name,members{user{id,displayName,racetimeId}}}}}}}";
+const MIDOS_HOUSE_GQL_SHAPE = "{series(name:\"s\"){event(name:\"7cc\"){races{id,phase,round,game,start,restreamConsent,scheduleUpdatedAt,teams{id,name,members{role,user{id,displayName,racetimeId}}}}}}}";
 
 // Name of sheet that stores our imported schedule data
-const SCHEDULE_IMPORT_SHEET_NAME = "Midos.house schedule import";
+const SCHEDULE_IMPORT_SHEET_NAME = "Midos.house schedule import - TEST";
 
 // Range of fields that contain our imported schedule
 const SCHEDULE_IMPORT_SHEET_RANGE = "A3:P1000";
@@ -74,22 +74,7 @@ function fetchScheduleData(gqlUrl: string, gqlShape: string, apiKey: string): Mi
             console.warn(`Skipping race with ID ${entry.id} - it has no named racers, likely a qualifier.`);
             continue;
         }
-        const scheduledStart = (!!entry.start) ? new Date(entry.start) : null;
-        const scheduleUpdatedAt = (!!entry.scheduleUpdatedAt) ? new Date(entry.scheduleUpdatedAt) : null;
-        schedule.push(new MidosHouseScheduleEntry(entry.id,
-            scheduledStart,
-            entry.phase,
-            entry.round,
-            entry.game,
-            entry.teams[0].members[0].user.id,
-            entry.teams[0].members[0].user.racetimeId,
-            entry.teams[0].members[0].user.displayName,
-            entry.teams[1].members[0].user.id,
-            entry.teams[1].members[0].user.racetimeId,
-            entry.teams[1].members[0].user.displayName,
-            false,
-            !!entry.restreamConsent,
-            scheduleUpdatedAt));
+        schedule.push(MidosHouseScheduleEntry.fromMidosHouseRace(entry));
     }
 
     return schedule;

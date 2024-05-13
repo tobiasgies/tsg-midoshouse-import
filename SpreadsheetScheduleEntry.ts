@@ -137,11 +137,11 @@ export class SinglePlayerSpreadsheetScheduleEntry extends SpreadsheetScheduleEnt
             this.scheduledStart,
             mhEntry.getGameName(),
             this.runner1Id,
-            mhEntry.runner1RacetimeId,
-            mhEntry.runner1Name,
+            mhEntry.teams[0].players[0].racetimeId,
+            mhEntry.teams[0].players[0].name,
             this.runner2Id,
-            mhEntry.runner2RacetimeId,
-            mhEntry.runner2Name,
+            mhEntry.teams[1].players[0].racetimeId,
+            mhEntry.teams[1].players[0].name,
             this.isCancelled,
             this.bothRunnersConsentToRestream,
             scheduleUpdatedAt,
@@ -209,8 +209,8 @@ export class SinglePlayerSpreadsheetScheduleEntry extends SpreadsheetScheduleEnt
 
     private raceDataMatches(mhEntry: MidosHouseScheduleEntry): boolean {
         return this.raceId.midosHouseId == mhEntry.id &&
-            this.runner1Id == mhEntry.runner1Id &&
-            this.runner2Id == mhEntry.runner2Id &&
+            this.runner1Id == mhEntry.teams[0].players[0].id &&
+            this.runner2Id == mhEntry.teams[1].players[0].id &&
             this.isCancelled == mhEntry.isCancelled;
     }
 
@@ -218,12 +218,12 @@ export class SinglePlayerSpreadsheetScheduleEntry extends SpreadsheetScheduleEnt
         return new SinglePlayerSpreadsheetScheduleEntry(new RaceId(mhEntry.id, discriminator),
             mhEntry.scheduledStart,
             mhEntry.getGameName(),
-            mhEntry.runner1Id,
-            mhEntry.runner1RacetimeId,
-            mhEntry.runner1Name,
-            mhEntry.runner2Id,
-            mhEntry.runner2RacetimeId,
-            mhEntry.runner2Name,
+            mhEntry.teams[0].players[0].id,
+            mhEntry.teams[0].players[0].racetimeId,
+            mhEntry.teams[0].players[0].name,
+            mhEntry.teams[1].players[0].id,
+            mhEntry.teams[1].players[0].racetimeId,
+            mhEntry.teams[1].players[0].name,
             mhEntry.isCancelled,
             mhEntry.bothRunnersConsentToRestream,
             mhEntry.scheduleUpdatedAt);

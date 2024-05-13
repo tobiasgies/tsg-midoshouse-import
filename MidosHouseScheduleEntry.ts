@@ -1,15 +1,75 @@
+type MidosHouseRace = {
+    id: string,
+    start: string,
+    phase: string,
+    round: string,
+    game: number,
+    restreamConsent: boolean,
+    scheduleUpdatedAt: string,
+    teams: Array<{
+        id: string,
+        name: string,
+        members: Array<{
+            role: string,
+            user: {
+                id: string,
+                displayName: string,
+                racetimeId: string
+            }
+        }>
+    }>
+}
+
+class MidosHouseTeam {
+    readonly id: string;
+    readonly name: string;
+    readonly players: MidosHousePlayer[];
+
+    constructor(id: string, name: string, players: MidosHousePlayer[]) {
+        this.id = id;
+        this.name = name;
+        this.players = players;
+    }
+
+    public toString(): string {
+        return `MidosHouseTeam {
+            id: ${this.id},
+            name: ${this.name},
+            players: ${this.players.map(it => it.toString()).toString()}
+        }`;
+    }
+}
+
+class MidosHousePlayer {
+    readonly id: string;
+    readonly racetimeId: string;
+    readonly name: string;
+    readonly role: string;
+
+    constructor(id: string, racetimeId: string, name: string, role: string) {
+        this.id = id;
+        this.racetimeId = racetimeId;
+        this.name = name;
+        this.role = role;
+    }
+
+    public toString(): string {
+        return `MidosHousePayer {
+            id: ${this.id},
+            racetimeId: ${this.racetimeId},
+            name: ${this.name},
+            role: ${this.role}
+        }`;
+    }
+}
+
 export class MidosHouseScheduleEntry {
     readonly id: string;
     readonly scheduledStart: Date;
     readonly phase: string;
     readonly round: string;
     readonly game: number;
-    readonly runner1Id: string;
-    readonly runner1RacetimeId: string;
-    readonly runner1Name: string;
-    readonly runner2Id: string;
-    readonly runner2RacetimeId: string;
-    readonly runner2Name: string;
+    readonly teams: MidosHouseTeam[];
     readonly isCancelled: boolean;
     readonly bothRunnersConsentToRestream: boolean;
     readonly scheduleUpdatedAt: Date;
@@ -19,12 +79,7 @@ export class MidosHouseScheduleEntry {
                 phase: string,
                 round: string,
                 game: number,
-                runner1Id: string,
-                runner1RacetimeId: string,
-                runner1Name: string,
-                runner2Id: string,
-                runner2RacetimeId: string,
-                runner2Name: string,
+                teams: MidosHouseTeam[],
                 isCancelled: boolean,
                 bothRunnersConsentToRestream: boolean,
                 scheduleUpdatedAt: Date) {
@@ -33,12 +88,7 @@ export class MidosHouseScheduleEntry {
         this.phase = phase;
         this.round = round;
         this.game = game;
-        this.runner1Id = runner1Id;
-        this.runner1RacetimeId = runner1RacetimeId;
-        this.runner1Name = runner1Name;
-        this.runner2Id = runner2Id;
-        this.runner2RacetimeId = runner2RacetimeId;
-        this.runner2Name = runner2Name;
+        this.teams = teams;
         this.isCancelled = isCancelled;
         this.bothRunnersConsentToRestream = bothRunnersConsentToRestream;
         this.scheduleUpdatedAt = scheduleUpdatedAt;
@@ -59,15 +109,33 @@ export class MidosHouseScheduleEntry {
             phase: ${this.phase},
             round: ${this.round},
             game: ${this.game},
-            runner1Id: ${this.runner1Id},
-            runner1RacetimeId: ${this.runner1RacetimeId},
-            runner1Name: ${this.runner1Name},
-            runner2Id: ${this.runner2Id},
-            runner2RacetimeId: ${this.runner2RacetimeId},
-            runner2Name: ${this.runner2Name},
+            teams: ${this.teams.map(it => it.toString()).toString()},
             isCancelled: ${this.isCancelled},
             bothRunnersConsentToRestream: ${this.bothRunnersConsentToRestream},
             scheduleUpdatedAt: ${this.scheduleUpdatedAt?.toISOString()}
         }`;
+    }
+
+    static fromMidosHouseRace(race: MidosHouseRace) {
+        return new MidosHouseScheduleEntry(
+            race.id,
+            (!!race.start) ? new Date(race.start) : null,
+            race.phase,
+            race.round,
+            race.game,
+            race.teams.map(team => new MidosHouseTeam(
+                team.id,
+                team.name,
+                team.members.map(member => new MidosHousePlayer(
+                    member.user.id,
+                    member.user.racetimeId,
+                    member.user.displayName,
+                    member.role
+                ))
+            )),
+            false,
+            race.restreamConsent,
+            (!!race.scheduleUpdatedAt) ? new Date(race.scheduleUpdatedAt) : null
+        )
     }
 }
