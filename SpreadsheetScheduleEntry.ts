@@ -2,10 +2,39 @@ import {RaceId} from "./RaceId";
 import {MidosHouseScheduleEntry} from "./MidosHouseScheduleEntry";
 import {SupplementalData} from "./SupplementalData";
 
-export class SpreadsheetScheduleEntry {
+abstract class SpreadsheetScheduleEntry<T extends SpreadsheetScheduleEntry<any>> {
     readonly raceId: RaceId
     readonly scheduledStart: Date
     readonly gameName: string
+    readonly isCancelled: boolean
+    readonly bothRunnersConsentToRestream: boolean
+    readonly scheduleUpdatedAt: Date
+
+    constructor(raceId: RaceId,
+                scheduledStart: Date,
+                gameName: string,
+                isCancelled: boolean,
+                bothRunnersConsentToRestream: boolean,
+                scheduleUpdatedAt: Date) {
+        this.raceId = raceId;
+        this.scheduledStart = scheduledStart;
+        this.gameName = gameName;
+        this.isCancelled = isCancelled;
+        this.bothRunnersConsentToRestream = bothRunnersConsentToRestream;
+        this.scheduleUpdatedAt = scheduleUpdatedAt;
+    }
+
+    public abstract withRaceCancelled(): T;
+    public abstract withRestreamConsent(): T;
+    public abstract withNewScheduledStart(mhEntry: MidosHouseScheduleEntry): T;
+    public abstract withUpdatedNoncriticalData(mhEntry: MidosHouseScheduleEntry): T;
+    public abstract matches(mhEntry: MidosHouseScheduleEntry): boolean;
+    public abstract onlyNewScheduledStartWasAdded(mhEntry: MidosHouseScheduleEntry): boolean;
+    public abstract onlyNewRestreamConsentWasGiven(mhEntry: MidosHouseScheduleEntry): boolean;
+    public abstract toSpreadsheetArray(): any[];
+}
+
+export class SinglePlayerSpreadsheetScheduleEntry extends SpreadsheetScheduleEntry<SinglePlayerSpreadsheetScheduleEntry> {
     readonly runner1Id: string
     readonly runner1RacetimeId: string
     readonly runner1Name: string
@@ -14,9 +43,6 @@ export class SpreadsheetScheduleEntry {
     readonly runner2RacetimeId: string
     readonly runner2Name: string
     readonly runner2Supplemental?: SupplementalData
-    readonly isCancelled: boolean
-    readonly bothRunnersConsentToRestream: boolean
-    readonly scheduleUpdatedAt: Date
 
     constructor(raceId: RaceId,
                 scheduledStart: Date,
@@ -32,24 +58,19 @@ export class SpreadsheetScheduleEntry {
                 scheduleUpdatedAt: Date,
                 runner1Supplemental?: SupplementalData,
                 runner2Supplemental?: SupplementalData) {
-        this.raceId = raceId;
-        this.scheduledStart = scheduledStart;
-        this.gameName = gameName;
+        super(raceId, scheduledStart, gameName, isCancelled, bothRunnersConsentToRestream, scheduleUpdatedAt);
         this.runner1Id = runner1Id;
         this.runner1RacetimeId = runner1RacetimeId;
         this.runner1Name = runner1Name;
         this.runner2Id = runner2Id;
         this.runner2RacetimeId = runner2RacetimeId;
         this.runner2Name = runner2Name;
-        this.isCancelled = isCancelled;
-        this.bothRunnersConsentToRestream = bothRunnersConsentToRestream;
-        this.scheduleUpdatedAt = scheduleUpdatedAt;
         this.runner1Supplemental = runner1Supplemental;
         this.runner2Supplemental = runner2Supplemental;
     }
 
-    public withRaceCancelled() {
-        return new SpreadsheetScheduleEntry(this.raceId,
+    public override withRaceCancelled(): SinglePlayerSpreadsheetScheduleEntry {
+        return new SinglePlayerSpreadsheetScheduleEntry(this.raceId,
             this.scheduledStart,
             this.gameName,
             this.runner1Id,
@@ -65,8 +86,8 @@ export class SpreadsheetScheduleEntry {
             this.runner2Supplemental)
     }
 
-    public withRestreamConsent() {
-        return new SpreadsheetScheduleEntry(this.raceId,
+    public override withRestreamConsent() {
+        return new SinglePlayerSpreadsheetScheduleEntry(this.raceId,
             this.scheduledStart,
             this.gameName,
             this.runner1Id,
@@ -82,7 +103,7 @@ export class SpreadsheetScheduleEntry {
             this.runner2Supplemental)
     }
 
-    public withNewScheduledStart(mhEntry: MidosHouseScheduleEntry) {
+    public override withNewScheduledStart(mhEntry: MidosHouseScheduleEntry) {
         if (!!this.scheduledStart) {
             throw new Error("This race already has a scheduled start, you may not change it. Cancel this race and create a new instance.");
         } else if (!mhEntry.scheduledStart) {
@@ -90,7 +111,7 @@ export class SpreadsheetScheduleEntry {
         }
         // Fallback for races that were manually recorded. They may not have scheduleUpdatedAt set.
         const scheduleUpdatedAt = mhEntry.scheduleUpdatedAt ?? mhEntry.scheduledStart;
-        return new SpreadsheetScheduleEntry(this.raceId,
+        return new SinglePlayerSpreadsheetScheduleEntry(this.raceId,
             mhEntry.scheduledStart,
             this.gameName,
             this.runner1Id,
@@ -106,13 +127,13 @@ export class SpreadsheetScheduleEntry {
             this.runner2Supplemental)
     }
 
-    public withUpdatedNoncriticalData(mhEntry: MidosHouseScheduleEntry) {
+    public override withUpdatedNoncriticalData(mhEntry: MidosHouseScheduleEntry) {
         let scheduleUpdatedAt = this.scheduleUpdatedAt;
         if (!scheduleUpdatedAt && !this.isCancelled && !!mhEntry.scheduleUpdatedAt) {
             // Update scheduling information with data that we previously weren't tracking.
             scheduleUpdatedAt = mhEntry.scheduleUpdatedAt
         }
-        return new SpreadsheetScheduleEntry(this.raceId,
+        return new SinglePlayerSpreadsheetScheduleEntry(this.raceId,
             this.scheduledStart,
             mhEntry.getGameName(),
             this.runner1Id,
@@ -128,25 +149,25 @@ export class SpreadsheetScheduleEntry {
             this.runner2Supplemental)
     }
 
-    public matches(mhEntry: MidosHouseScheduleEntry): boolean {
+    public override matches(mhEntry: MidosHouseScheduleEntry): boolean {
         return this.raceDataMatches(mhEntry) &&
             (!this.scheduledStart && !mhEntry.scheduledStart ||
                 (!!this.scheduledStart && this.scheduledStart.getTime() == mhEntry.scheduledStart?.getTime())) &&
             this.bothRunnersConsentToRestream == mhEntry.bothRunnersConsentToRestream
     }
 
-    public onlyNewScheduledStartWasAdded(mhEntry: MidosHouseScheduleEntry): boolean {
+    public override onlyNewScheduledStartWasAdded(mhEntry: MidosHouseScheduleEntry): boolean {
         return this.raceDataMatches(mhEntry) &&
             !this.scheduledStart && !!mhEntry.scheduledStart
     }
 
-    public onlyNewRestreamConsentWasGiven(mhEntry: MidosHouseScheduleEntry): boolean {
+    public override onlyNewRestreamConsentWasGiven(mhEntry: MidosHouseScheduleEntry): boolean {
         return this.raceDataMatches(mhEntry) &&
             this.bothRunnersConsentToRestream == false &&
             mhEntry.bothRunnersConsentToRestream == true
     }
 
-    public toSpreadsheetArray(): any[] {
+    public override toSpreadsheetArray(): any[] {
         return [
             this.raceId.toString(),
             this.scheduledStart,
@@ -194,7 +215,7 @@ export class SpreadsheetScheduleEntry {
     }
 
     static fromMidosHouseEntryWithDiscriminator(mhEntry: MidosHouseScheduleEntry, discriminator: number) {
-        return new SpreadsheetScheduleEntry(new RaceId(mhEntry.id, discriminator),
+        return new SinglePlayerSpreadsheetScheduleEntry(new RaceId(mhEntry.id, discriminator),
             mhEntry.scheduledStart,
             mhEntry.getGameName(),
             mhEntry.runner1Id,
@@ -209,7 +230,7 @@ export class SpreadsheetScheduleEntry {
     }
 
     withSupplementalData(runner1Supplemental?: SupplementalData, runner2Supplemental?: SupplementalData) {
-        return new SpreadsheetScheduleEntry(this.raceId,
+        return new SinglePlayerSpreadsheetScheduleEntry(this.raceId,
             this.scheduledStart,
             this.gameName,
             this.runner1Id,
@@ -223,5 +244,33 @@ export class SpreadsheetScheduleEntry {
             this.scheduleUpdatedAt,
             runner1Supplemental,
             runner2Supplemental)
+    }
+}
+
+export class CoOpSpreadsheetScheduleEntry extends SpreadsheetScheduleEntry<CoOpSpreadsheetScheduleEntry> {
+
+    public withRaceCancelled(): CoOpSpreadsheetScheduleEntry {
+        throw new Error("Method not implemented.");
+    }
+    public withRestreamConsent(): CoOpSpreadsheetScheduleEntry {
+        throw new Error("Method not implemented.");
+    }
+    public withNewScheduledStart(mhEntry: MidosHouseScheduleEntry): CoOpSpreadsheetScheduleEntry {
+        throw new Error("Method not implemented.");
+    }
+    public withUpdatedNoncriticalData(mhEntry: MidosHouseScheduleEntry): CoOpSpreadsheetScheduleEntry {
+        throw new Error("Method not implemented.");
+    }
+    public matches(mhEntry: MidosHouseScheduleEntry): boolean {
+        throw new Error("Method not implemented.");
+    }
+    public onlyNewScheduledStartWasAdded(mhEntry: MidosHouseScheduleEntry): boolean {
+        throw new Error("Method not implemented.");
+    }
+    public onlyNewRestreamConsentWasGiven(mhEntry: MidosHouseScheduleEntry): boolean {
+        throw new Error("Method not implemented.");
+    }
+    public toSpreadsheetArray(): any[] {
+        throw new Error("Method not implemented.");
     }
 }

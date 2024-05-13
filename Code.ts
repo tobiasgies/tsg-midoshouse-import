@@ -1,5 +1,5 @@
 import {MidosHouseScheduleEntry} from "./MidosHouseScheduleEntry";
-import {SpreadsheetScheduleEntry} from "./SpreadsheetScheduleEntry";
+import {SinglePlayerSpreadsheetScheduleEntry} from "./SpreadsheetScheduleEntry";
 import {RaceId} from "./RaceId";
 import {SupplementalData} from "./SupplementalData";
 
@@ -43,7 +43,7 @@ function importScheduleFromMidosHouse() {
     saveOutputToSpreadsheet(output, SCHEDULE_IMPORT_SHEET_NAME, SCHEDULE_IMPORT_SHEET_RANGE);
 }
 
-function saveOutputToSpreadsheet(output: SpreadsheetScheduleEntry[], sheetName: string, sheetRange: string) {
+function saveOutputToSpreadsheet(output: SinglePlayerSpreadsheetScheduleEntry[], sheetName: string, sheetRange: string) {
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     const schedulingSheet = spreadsheet.getSheetByName(sheetName);
 
@@ -105,13 +105,13 @@ function fetchSupplementalData(sheetName: string, sheetRange: string): Map<strin
         .map(it => [it.runnerId, it]));
 }
 
-function fetchExistingSchedule(sheetName: string, sheetRange: string): SpreadsheetScheduleEntry[] {
+function fetchExistingSchedule(sheetName: string, sheetRange: string): SinglePlayerSpreadsheetScheduleEntry[] {
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     const schedulingSheet = spreadsheet.getSheetByName(sheetName);
 
     return schedulingSheet.getRange(sheetRange).getValues()
         .filter(it => !!it[0])
-        .map(it => new SpreadsheetScheduleEntry(RaceId.fromString(it[0]),
+        .map(it => new SinglePlayerSpreadsheetScheduleEntry(RaceId.fromString(it[0]),
             (!!it[1]) ? it[1] : null,
             it[2],
             it[3],
@@ -125,8 +125,8 @@ function fetchExistingSchedule(sheetName: string, sheetRange: string): Spreadshe
             (!!it[11]) ? it[11] : null));
 }
 
-function reindexExistingScheduleByMidosHouseId(existingSchedule: SpreadsheetScheduleEntry[]): SpreadsheetScheduleEntry[][] {
-    let reindexedByMhid: SpreadsheetScheduleEntry[][] = [];
+function reindexExistingScheduleByMidosHouseId(existingSchedule: SinglePlayerSpreadsheetScheduleEntry[]): SinglePlayerSpreadsheetScheduleEntry[][] {
+    let reindexedByMhid: SinglePlayerSpreadsheetScheduleEntry[][] = [];
     for (const entry of existingSchedule) {
         if (!reindexedByMhid[entry.raceId.midosHouseId]) {
             reindexedByMhid[entry.raceId.midosHouseId] = [];
@@ -136,22 +136,22 @@ function reindexExistingScheduleByMidosHouseId(existingSchedule: SpreadsheetSche
     return reindexedByMhid;
 }
 
-function compareMidosHouseAndExistingSchedule(mhSchedule: MidosHouseScheduleEntry[], existingSchedule: SpreadsheetScheduleEntry[]) {
+function compareMidosHouseAndExistingSchedule(mhSchedule: MidosHouseScheduleEntry[], existingSchedule: SinglePlayerSpreadsheetScheduleEntry[]) {
     const mhIdsInSchedule = mhSchedule.map(it => it.id);
     const reindexed = reindexExistingScheduleByMidosHouseId(existingSchedule);
 
-    let output: SpreadsheetScheduleEntry[] = [];
+    let output: SinglePlayerSpreadsheetScheduleEntry[] = [];
 
     // Compare MH schedule entries with existing entries.
     for (const mhEntry of mhSchedule) {
         if (!reindexed[mhEntry.id]) {
             // Add new entry to output list
-            output.push(SpreadsheetScheduleEntry.fromMidosHouseEntryWithDiscriminator(mhEntry, 0));
+            output.push(SinglePlayerSpreadsheetScheduleEntry.fromMidosHouseEntryWithDiscriminator(mhEntry, 0));
             console.info(`New entry from Midos House with ID ${mhEntry.id} added to output.`);
             continue;
         }
         for (const it of reindexed[mhEntry.id]) {
-            const spreadsheetEntry = it as SpreadsheetScheduleEntry;
+            const spreadsheetEntry = it as SinglePlayerSpreadsheetScheduleEntry;
             if (spreadsheetEntry.matches(mhEntry)) {
                 // Add unchanged entry to output list
                 output.push(spreadsheetEntry.withUpdatedNoncriticalData(mhEntry));
@@ -171,7 +171,7 @@ function compareMidosHouseAndExistingSchedule(mhSchedule: MidosHouseScheduleEntr
             } else {
                 // Scheduled time or runner consent has changed. Cancel old entry, add new entry to output list.
                 output.push(spreadsheetEntry.withUpdatedNoncriticalData(mhEntry).withRaceCancelled());
-                output.push(SpreadsheetScheduleEntry.fromMidosHouseEntryWithDiscriminator(mhEntry, spreadsheetEntry.raceId.nextDiscriminator()));
+                output.push(SinglePlayerSpreadsheetScheduleEntry.fromMidosHouseEntryWithDiscriminator(mhEntry, spreadsheetEntry.raceId.nextDiscriminator()));
                 console.warn(`Schedule change received from Midos House for entry with ID ${spreadsheetEntry.raceId.toString()}`);
             }
         }
