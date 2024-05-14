@@ -2,7 +2,7 @@ import {RaceId} from "./RaceId";
 import {MidosHouseScheduleEntry} from "./MidosHouseScheduleEntry";
 import {SupplementalData} from "./SupplementalData";
 
-abstract class SpreadsheetScheduleEntry<T extends SpreadsheetScheduleEntry<any>> {
+export abstract class SpreadsheetScheduleEntry<T extends SpreadsheetScheduleEntry<any>> {
     readonly raceId: RaceId
     readonly scheduledStart: Date
     readonly gameName: string
@@ -188,6 +188,23 @@ export class SinglePlayerSpreadsheetScheduleEntry extends SpreadsheetScheduleEnt
         ];
     }
 
+    public withSupplementalData(runner1Supplemental?: SupplementalData, runner2Supplemental?: SupplementalData) {
+        return new SinglePlayerSpreadsheetScheduleEntry(this.raceId,
+            this.scheduledStart,
+            this.gameName,
+            this.runner1Id,
+            this.runner1RacetimeId,
+            this.runner1Name,
+            this.runner2Id,
+            this.runner2RacetimeId,
+            this.runner2Name,
+            this.isCancelled,
+            this.bothRunnersConsentToRestream,
+            this.scheduleUpdatedAt,
+            runner1Supplemental,
+            runner2Supplemental)
+    }
+
     public toString(): string {
         return `SpreadsheetScheduleEntry {
             raceId: ${this.raceId?.toString()},
@@ -230,21 +247,19 @@ export class SinglePlayerSpreadsheetScheduleEntry extends SpreadsheetScheduleEnt
             mhEntry.scheduleUpdatedAt ?? mhEntry.scheduledStart);
     }
 
-    withSupplementalData(runner1Supplemental?: SupplementalData, runner2Supplemental?: SupplementalData) {
-        return new SinglePlayerSpreadsheetScheduleEntry(this.raceId,
-            this.scheduledStart,
-            this.gameName,
-            this.runner1Id,
-            this.runner1RacetimeId,
-            this.runner1Name,
-            this.runner2Id,
-            this.runner2RacetimeId,
-            this.runner2Name,
-            this.isCancelled,
-            this.bothRunnersConsentToRestream,
-            this.scheduleUpdatedAt,
-            runner1Supplemental,
-            runner2Supplemental)
+    static fromSpreadsheetArray(row: any[]): SinglePlayerSpreadsheetScheduleEntry {
+        return new SinglePlayerSpreadsheetScheduleEntry(RaceId.fromString(row[0]),
+            (!!row[1]) ? row[1] : null,
+            row[2],
+            row[3],
+            row[4],
+            row[5],
+            row[6],
+            row[7],
+            row[8],
+            !!row[9],
+            !!row[10],
+            (!!row[11]) ? row[11] : null)
     }
 }
 

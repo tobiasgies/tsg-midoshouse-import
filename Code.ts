@@ -1,29 +1,32 @@
 import {MidosHouseScheduleEntry} from "./MidosHouseScheduleEntry";
-import {SinglePlayerSpreadsheetScheduleEntry} from "./SpreadsheetScheduleEntry";
+import {SinglePlayerSpreadsheetScheduleEntry, SpreadsheetScheduleEntry} from "./SpreadsheetScheduleEntry";
 import {RaceId} from "./RaceId";
 import {SupplementalData} from "./SupplementalData";
 
 // URL of schedule JSON on midos.house
 const MIDOS_HOUSE_GQL_URL = "https://midos.house/api/v1/graphql";
-const MIDOS_HOUSE_GQL_SHAPE = "{series(name:\"s\"){event(name:\"7cc\"){races{id,phase,round,game,start,restreamConsent,scheduleUpdatedAt,teams{id,name,members{role,user{id,displayName,racetimeId}}}}}}}";
 
 // Name of sheet that stores our imported schedule data
-const SCHEDULE_IMPORT_SHEET_NAME = "Midos.house schedule import - TEST";
+const S7_SCHEDULE_SHEET = "Midos.house schedule import - TEST";
 
 // Range of fields that contain our imported schedule
-const SCHEDULE_IMPORT_SHEET_RANGE = "A3:P1000";
+const SINGLE_PLAYER_SHEET_RANGE = "A3:P1000";
 
 // Name of sheet that stores supplemental data that can't be obtained from Midos.house
-const SUPPLEMENTAL_SHEET_NAME = "Supplemental data";
+const S7_SUPPLEMENTAL_SHEET = "Supplemental data";
 
 // Range of fields that contain our supplemental data
 const SUPPLEMENTAL_SHEET_RANGE = "A2:D1000";
 
-function importScheduleFromMidosHouse() {
+function importAllSchedules() {
+    importSinglePlayerSchedule("s", "7cc", S7_SCHEDULE_SHEET, S7_SUPPLEMENTAL_SHEET)
+}
+
+function importSinglePlayerSchedule(series: string, event: string, scheduleSheet: string, supplementalSheet: string) {
     const apiKey = PropertiesService.getScriptProperties().getProperty("MIDOS_HOUSE_API_KEY");
-    const mhSchedule = fetchScheduleData(MIDOS_HOUSE_GQL_URL, MIDOS_HOUSE_GQL_SHAPE, apiKey);
-    const existingSchedule = fetchExistingSchedule(SCHEDULE_IMPORT_SHEET_NAME, SCHEDULE_IMPORT_SHEET_RANGE);
-    const supplemental = fetchSupplementalData(SUPPLEMENTAL_SHEET_NAME, SUPPLEMENTAL_SHEET_RANGE);
+    const mhSchedule = fetchScheduleData(MIDOS_HOUSE_GQL_URL, gqlQuery(series, event), apiKey);
+    const existingSchedule = fetchExistingSinglePlayerSchedule(scheduleSheet, SINGLE_PLAYER_SHEET_RANGE);
+    const supplemental = fetchSupplementalData(supplementalSheet, SUPPLEMENTAL_SHEET_RANGE);
 
     let output = compareMidosHouseAndExistingSchedule(mhSchedule, existingSchedule).map(
         it => it.withSupplementalData(supplemental.get(it.runner1Id), supplemental.get(it.runner2Id))
@@ -40,24 +43,28 @@ function importScheduleFromMidosHouse() {
     })
 
     // Overwrite entire spreadsheet with output
-    saveOutputToSpreadsheet(output, SCHEDULE_IMPORT_SHEET_NAME, SCHEDULE_IMPORT_SHEET_RANGE);
+    saveOutputToSpreadsheet(output, scheduleSheet, SINGLE_PLAYER_SHEET_RANGE, 998, 16);
 }
 
-function saveOutputToSpreadsheet(output: SinglePlayerSpreadsheetScheduleEntry[], sheetName: string, sheetRange: string) {
+function gqlQuery(series: string, event: string) {
+    return `{series(name:"${series}"){event(name:"${event}"){races{id,phase,round,game,start,restreamConsent,scheduleUpdatedAt,teams{id,name,members{role,user{id,displayName,racetimeId}}}}}}}`;
+}
+
+function saveOutputToSpreadsheet(output: SpreadsheetScheduleEntry<any>[], sheetName: string, sheetRange: string, rowCount: number, columnCount: number) {
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     const schedulingSheet = spreadsheet.getSheetByName(sheetName);
 
     let spreadsheetData = output.map(it => it.toSpreadsheetArray());
-    padWithEmptyArrays(spreadsheetData, 998);
+    padWithEmptyArrays(spreadsheetData, rowCount, columnCount);
     schedulingSheet.getRange(sheetRange)
         .clear()
         .setValues(spreadsheetData);
 }
 
-function padWithEmptyArrays(spreadsheetData: any[][], targetRowCount: number) {
+function padWithEmptyArrays(spreadsheetData: any[][], targetRowCount: number, columnCount: number) {
     const rowsToAdd = targetRowCount - spreadsheetData.length;
     for (let i = 0; i < rowsToAdd; i++) {
-        spreadsheetData.push([[], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []]);
+        spreadsheetData.push(new Array(columnCount).fill([]));
     }
 }
 
@@ -90,28 +97,17 @@ function fetchSupplementalData(sheetName: string, sheetRange: string): Map<strin
         .map(it => [it.runnerId, it]));
 }
 
-function fetchExistingSchedule(sheetName: string, sheetRange: string): SinglePlayerSpreadsheetScheduleEntry[] {
+function fetchExistingSinglePlayerSchedule(sheetName: string, sheetRange: string): SinglePlayerSpreadsheetScheduleEntry[] {
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     const schedulingSheet = spreadsheet.getSheetByName(sheetName);
 
     return schedulingSheet.getRange(sheetRange).getValues()
         .filter(it => !!it[0])
-        .map(it => new SinglePlayerSpreadsheetScheduleEntry(RaceId.fromString(it[0]),
-            (!!it[1]) ? it[1] : null,
-            it[2],
-            it[3],
-            it[4],
-            it[5],
-            it[6],
-            it[7],
-            it[8],
-            !!it[9],
-            !!it[10],
-            (!!it[11]) ? it[11] : null));
+        .map(it => SinglePlayerSpreadsheetScheduleEntry.fromSpreadsheetArray(it));
 }
 
-function reindexExistingScheduleByMidosHouseId(existingSchedule: SinglePlayerSpreadsheetScheduleEntry[]): SinglePlayerSpreadsheetScheduleEntry[][] {
-    let reindexedByMhid: SinglePlayerSpreadsheetScheduleEntry[][] = [];
+function reindexExistingScheduleByMidosHouseId(existingSchedule: SpreadsheetScheduleEntry<any>[]): SpreadsheetScheduleEntry<any>[][] {
+    let reindexedByMhid: SpreadsheetScheduleEntry<any>[][] = [];
     for (const entry of existingSchedule) {
         if (!reindexedByMhid[entry.raceId.midosHouseId]) {
             reindexedByMhid[entry.raceId.midosHouseId] = [];
@@ -121,7 +117,7 @@ function reindexExistingScheduleByMidosHouseId(existingSchedule: SinglePlayerSpr
     return reindexedByMhid;
 }
 
-function compareMidosHouseAndExistingSchedule(mhSchedule: MidosHouseScheduleEntry[], existingSchedule: SinglePlayerSpreadsheetScheduleEntry[]) {
+function compareMidosHouseAndExistingSchedule(mhSchedule: MidosHouseScheduleEntry[], existingSchedule: SpreadsheetScheduleEntry<any>[]) {
     const mhIdsInSchedule = mhSchedule.map(it => it.id);
     const reindexed = reindexExistingScheduleByMidosHouseId(existingSchedule);
 
