@@ -71,7 +71,7 @@ export class MidosHouseScheduleEntry {
     readonly game: number;
     readonly teams: MidosHouseTeam[];
     readonly isCancelled: boolean;
-    readonly bothRunnersConsentToRestream: boolean;
+    readonly restreamConsent: boolean;
     readonly scheduleUpdatedAt: Date;
 
     constructor(id: string,
@@ -81,7 +81,7 @@ export class MidosHouseScheduleEntry {
                 game: number,
                 teams: MidosHouseTeam[],
                 isCancelled: boolean,
-                bothRunnersConsentToRestream: boolean,
+                restreamConsent: boolean,
                 scheduleUpdatedAt: Date) {
         this.id = id;
         this.scheduledStart = scheduledStart;
@@ -90,7 +90,7 @@ export class MidosHouseScheduleEntry {
         this.game = game;
         this.teams = teams;
         this.isCancelled = isCancelled;
-        this.bothRunnersConsentToRestream = bothRunnersConsentToRestream;
+        this.restreamConsent = restreamConsent;
         this.scheduleUpdatedAt = scheduleUpdatedAt;
     }
 
@@ -111,7 +111,7 @@ export class MidosHouseScheduleEntry {
             game: ${this.game},
             teams: ${this.teams.map(it => it.toString()).toString()},
             isCancelled: ${this.isCancelled},
-            bothRunnersConsentToRestream: ${this.bothRunnersConsentToRestream},
+            restreamConsent: ${this.restreamConsent},
             scheduleUpdatedAt: ${this.scheduleUpdatedAt?.toISOString()}
         }`;
     }
