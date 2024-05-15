@@ -2,7 +2,7 @@ import {RaceId} from "./RaceId";
 import {MidosHouseScheduleEntry} from "./MidosHouseScheduleEntry";
 import {SupplementalData} from "./SupplementalData";
 
-export abstract class SpreadsheetScheduleEntry<T extends SpreadsheetScheduleEntry<any>> {
+export abstract class SpreadsheetEntry<T extends SpreadsheetEntry<any>> {
     readonly raceId: RaceId
     readonly scheduledStart: Date
     readonly gameName: string
@@ -34,7 +34,7 @@ export abstract class SpreadsheetScheduleEntry<T extends SpreadsheetScheduleEntr
     public abstract toSpreadsheetArray(): any[];
 }
 
-export class SinglePlayerSpreadsheetScheduleEntry extends SpreadsheetScheduleEntry<SinglePlayerSpreadsheetScheduleEntry> {
+export class SinglePlayerSpreadsheetEntry extends SpreadsheetEntry<SinglePlayerSpreadsheetEntry> {
     readonly runner1Id: string
     readonly runner1RacetimeId: string
     readonly runner1Name: string
@@ -69,8 +69,8 @@ export class SinglePlayerSpreadsheetScheduleEntry extends SpreadsheetScheduleEnt
         this.runner2Supplemental = runner2Supplemental;
     }
 
-    public override withRaceCancelled(): SinglePlayerSpreadsheetScheduleEntry {
-        return new SinglePlayerSpreadsheetScheduleEntry(this.raceId,
+    public override withRaceCancelled(): SinglePlayerSpreadsheetEntry {
+        return new SinglePlayerSpreadsheetEntry(this.raceId,
             this.scheduledStart,
             this.gameName,
             this.runner1Id,
@@ -87,7 +87,7 @@ export class SinglePlayerSpreadsheetScheduleEntry extends SpreadsheetScheduleEnt
     }
 
     public override withRestreamConsent() {
-        return new SinglePlayerSpreadsheetScheduleEntry(this.raceId,
+        return new SinglePlayerSpreadsheetEntry(this.raceId,
             this.scheduledStart,
             this.gameName,
             this.runner1Id,
@@ -111,7 +111,7 @@ export class SinglePlayerSpreadsheetScheduleEntry extends SpreadsheetScheduleEnt
         }
         // Fallback for races that were manually recorded. They may not have scheduleUpdatedAt set.
         const scheduleUpdatedAt = mhEntry.scheduleUpdatedAt ?? mhEntry.scheduledStart;
-        return new SinglePlayerSpreadsheetScheduleEntry(this.raceId,
+        return new SinglePlayerSpreadsheetEntry(this.raceId,
             mhEntry.scheduledStart,
             this.gameName,
             this.runner1Id,
@@ -133,7 +133,7 @@ export class SinglePlayerSpreadsheetScheduleEntry extends SpreadsheetScheduleEnt
             // Update scheduling information with data that we previously weren't tracking.
             scheduleUpdatedAt = mhEntry.scheduleUpdatedAt ?? mhEntry.scheduledStart
         }
-        return new SinglePlayerSpreadsheetScheduleEntry(this.raceId,
+        return new SinglePlayerSpreadsheetEntry(this.raceId,
             this.scheduledStart,
             mhEntry.getGameName(),
             this.runner1Id,
@@ -189,7 +189,7 @@ export class SinglePlayerSpreadsheetScheduleEntry extends SpreadsheetScheduleEnt
     }
 
     public withSupplementalData(runner1Supplemental?: SupplementalData, runner2Supplemental?: SupplementalData) {
-        return new SinglePlayerSpreadsheetScheduleEntry(this.raceId,
+        return new SinglePlayerSpreadsheetEntry(this.raceId,
             this.scheduledStart,
             this.gameName,
             this.runner1Id,
@@ -232,7 +232,7 @@ export class SinglePlayerSpreadsheetScheduleEntry extends SpreadsheetScheduleEnt
     }
 
     static fromMidosHouseEntryWithDiscriminator(mhEntry: MidosHouseScheduleEntry, discriminator: number) {
-        return new SinglePlayerSpreadsheetScheduleEntry(new RaceId(mhEntry.id, discriminator),
+        return new SinglePlayerSpreadsheetEntry(new RaceId(mhEntry.id, discriminator),
             mhEntry.scheduledStart,
             mhEntry.getGameName(),
             mhEntry.teams[0].players[0].id,
@@ -247,8 +247,8 @@ export class SinglePlayerSpreadsheetScheduleEntry extends SpreadsheetScheduleEnt
             mhEntry.scheduleUpdatedAt ?? mhEntry.scheduledStart);
     }
 
-    static fromSpreadsheetArray(row: any[]): SinglePlayerSpreadsheetScheduleEntry {
-        return new SinglePlayerSpreadsheetScheduleEntry(RaceId.fromString(row[0]),
+    static fromSpreadsheetArray(row: any[]): SinglePlayerSpreadsheetEntry {
+        return new SinglePlayerSpreadsheetEntry(RaceId.fromString(row[0]),
             (!!row[1]) ? row[1] : null,
             row[2],
             row[3],
@@ -263,18 +263,18 @@ export class SinglePlayerSpreadsheetScheduleEntry extends SpreadsheetScheduleEnt
     }
 }
 
-export class CoOpSpreadsheetScheduleEntry extends SpreadsheetScheduleEntry<CoOpSpreadsheetScheduleEntry> {
+export class CoOpSpreadsheetEntry extends SpreadsheetEntry<CoOpSpreadsheetEntry> {
 
-    public withRaceCancelled(): CoOpSpreadsheetScheduleEntry {
+    public withRaceCancelled(): CoOpSpreadsheetEntry {
         throw new Error("Method not implemented.");
     }
-    public withRestreamConsent(): CoOpSpreadsheetScheduleEntry {
+    public withRestreamConsent(): CoOpSpreadsheetEntry {
         throw new Error("Method not implemented.");
     }
-    public withNewScheduledStart(mhEntry: MidosHouseScheduleEntry): CoOpSpreadsheetScheduleEntry {
+    public withNewScheduledStart(mhEntry: MidosHouseScheduleEntry): CoOpSpreadsheetEntry {
         throw new Error("Method not implemented.");
     }
-    public withUpdatedNoncriticalData(mhEntry: MidosHouseScheduleEntry): CoOpSpreadsheetScheduleEntry {
+    public withUpdatedNoncriticalData(mhEntry: MidosHouseScheduleEntry): CoOpSpreadsheetEntry {
         throw new Error("Method not implemented.");
     }
     public matches(mhEntry: MidosHouseScheduleEntry): boolean {
