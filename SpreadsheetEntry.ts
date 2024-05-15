@@ -525,6 +525,37 @@ export class CoOpSpreadsheetEntry extends SpreadsheetEntry<CoOpSpreadsheetEntry>
             this.scheduleUpdatedAt)
     }
 
+    public toString(): string {
+        return `CoOpScheduleEntry {
+            raceId: ${this.raceId?.toString()},
+            scheduledStart: ${this.scheduledStart?.toISOString()},
+            gameName: ${this.gameName},
+            team1Id: ${this.team1Id},
+            team1Name: ${this.team1Name},
+            team1Runner1Id: ${this.team1Runner1Id},
+            team1Runner1RacetimeId: ${this.team1Runner1RacetimeId},
+            team1Runner1Name: ${this.team1Runner1Name},
+            team1Runner1Supplemental: ${this.team1Runner1Supplemental?.toString()},
+            team1Runner2Id: ${this.team1Runner2Id},
+            team1Runner2RacetimeId: ${this.team1Runner2RacetimeId},
+            team1Runner2Name: ${this.team1Runner2Name},
+            team1Runner2Supplemental: ${this.team1Runner2Supplemental?.toString()},
+            team2Id: ${this.team2Id},
+            team2Name: ${this.team2Name},
+            team2Runner1Id: ${this.team2Runner1Id},
+            team2Runner1RacetimeId: ${this.team2Runner1RacetimeId},
+            team2Runner1Name: ${this.team2Runner1Name},
+            team2Runner1Supplemental: ${this.team2Runner1Supplemental?.toString()},
+            team2Runner2Id: ${this.team2Runner2Id},
+            team2Runner2RacetimeId: ${this.team2Runner2RacetimeId},
+            team2Runner2Name: ${this.team2Runner2Name},
+            team2Runner2Supplemental: ${this.team2Runner2Supplemental?.toString()},
+            isCancelled: ${this.isCancelled},
+            restreamConsent: ${this.restreamConsent},
+            scheduleUpdatedAt: ${this.scheduleUpdatedAt?.toISOString()}
+        }`;
+    }
+
     protected override raceDataMatches(mhEntry: MidosHouseScheduleEntry): boolean {
         return this.raceId.midosHouseId == mhEntry.id &&
             this.team1Id == mhEntry.teams[0].id &&
