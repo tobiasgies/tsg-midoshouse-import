@@ -76,7 +76,7 @@ function importCoOpSchedule(series: string, event: string, scheduleSheet: string
     const mhSchedule = fetchScheduleData(MIDOS_HOUSE_GQL_URL, gqlQuery(series, event), apiKey);
     const existingSchedule = fetchExistingSchedule(
         scheduleSheet,
-        SINGLE_PLAYER_SHEET_RANGE,
+        COOP_SHEET_RANGE,
         CoOpSpreadsheetEntry.fromSpreadsheetArray
     );
     const supplemental = fetchSupplementalData(supplementalSheet, SUPPLEMENTAL_SHEET_RANGE);

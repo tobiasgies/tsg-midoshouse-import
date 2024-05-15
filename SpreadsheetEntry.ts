@@ -605,23 +605,23 @@ export class CoOpSpreadsheetEntry extends SpreadsheetEntry<CoOpSpreadsheetEntry>
             row[5],
             row[6],
             row[7],
-            row[8],
+            undefined,
             row[9],
             row[10],
             row[11],
-            row[12],
+            undefined,
             row[13],
             row[14],
             row[15],
             row[16],
             row[17],
-            row[18],
+            undefined,
             row[19],
             row[20],
             row[21],
-            row[22],
+            undefined,
             !!row[23],
             !!row[24],
-            (!!row[25]) ? row[25] : null)
+            (!!row[25]) ? row[25] : null);
     }
 }
