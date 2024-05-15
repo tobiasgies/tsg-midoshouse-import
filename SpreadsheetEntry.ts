@@ -10,12 +10,12 @@ export abstract class SpreadsheetEntry<T extends SpreadsheetEntry<any>> {
     readonly restreamConsent: boolean
     readonly scheduleUpdatedAt: Date
 
-    constructor(raceId: RaceId,
-                scheduledStart: Date,
-                gameName: string,
-                isCancelled: boolean,
-                restreamConsent: boolean,
-                scheduleUpdatedAt: Date) {
+    protected constructor(raceId: RaceId,
+                          scheduledStart: Date,
+                          gameName: string,
+                          isCancelled: boolean,
+                          restreamConsent: boolean,
+                          scheduleUpdatedAt: Date) {
         this.raceId = raceId;
         this.scheduledStart = scheduledStart;
         this.gameName = gameName;
