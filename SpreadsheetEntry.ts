@@ -284,7 +284,32 @@ export class CoOpSpreadsheetEntry extends SpreadsheetEntry<CoOpSpreadsheetEntry>
     readonly team2Runner2Supplemental?: SupplementalData
 
 
-    constructor(raceId: RaceId, scheduledStart: Date, gameName: string, team1Id: string, team1Name: string, team1Runner1Id: string, team1Runner1RacetimeId: string, team1Runner1Name: string, team1Runner1Supplemental: SupplementalData, team1Runner2Id: string, team1Runner2RacetimeId: string, team1Runner2Name: string, team1Runner2Supplemental: SupplementalData, team2Id: string, team2Name: string, team2Runner1Id: string, team2Runner1RacetimeId: string, team2Runner1Name: string, team2Runner1Supplemental: SupplementalData, team2Runner2Id: string, team2Runner2RacetimeId: string, team2Runner2Name: string, team2Runner2Supplemental: SupplementalData, isCancelled: boolean, bothRunnersConsentToRestream: boolean, scheduleUpdatedAt: Date) {
+    constructor(raceId: RaceId,
+                scheduledStart: Date,
+                gameName: string,
+                team1Id: string,
+                team1Name: string,
+                team1Runner1Id: string,
+                team1Runner1RacetimeId: string,
+                team1Runner1Name: string,
+                team1Runner1Supplemental: SupplementalData,
+                team1Runner2Id: string,
+                team1Runner2RacetimeId: string,
+                team1Runner2Name: string,
+                team1Runner2Supplemental: SupplementalData,
+                team2Id: string,
+                team2Name: string,
+                team2Runner1Id: string,
+                team2Runner1RacetimeId: string,
+                team2Runner1Name: string,
+                team2Runner1Supplemental: SupplementalData,
+                team2Runner2Id: string,
+                team2Runner2RacetimeId: string,
+                team2Runner2Name: string,
+                team2Runner2Supplemental: SupplementalData,
+                isCancelled: boolean,
+                bothRunnersConsentToRestream: boolean,
+                scheduleUpdatedAt: Date) {
         super(raceId, scheduledStart, gameName, isCancelled, bothRunnersConsentToRestream, scheduleUpdatedAt);
         this.team1Id = team1Id;
         this.team1Name = team1Name;
@@ -444,12 +469,6 @@ export class CoOpSpreadsheetEntry extends SpreadsheetEntry<CoOpSpreadsheetEntry>
             this.restreamConsent == mhEntry.restreamConsent
     }
 
-    public onlyNewScheduledStartWasAdded(mhEntry: MidosHouseScheduleEntry): boolean {
-        throw new Error("Method not implemented.");
-    }
-    public onlyNewRestreamConsentWasGiven(mhEntry: MidosHouseScheduleEntry): boolean {
-        throw new Error("Method not implemented.");
-    }
     public toSpreadsheetArray(): any[] {
         return [
             this.raceId.toString(),
