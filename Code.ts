@@ -1,18 +1,27 @@
 import {MidosHouseScheduleEntry} from "./MidosHouseScheduleEntry";
-import {SinglePlayerSpreadsheetEntry, SpreadsheetEntry} from "./SpreadsheetEntry";
+import {CoOpSpreadsheetEntry, SinglePlayerSpreadsheetEntry, SpreadsheetEntry} from "./SpreadsheetEntry";
 import {SupplementalData} from "./SupplementalData";
 
 // URL of schedule JSON on midos.house
 const MIDOS_HOUSE_GQL_URL = "https://midos.house/api/v1/graphql";
 
 // Name of sheet that stores our imported schedule data
-const S7_SCHEDULE_SHEET = "Midos.house schedule import - TEST";
+const S7_SCHEDULE_SHEET = "Midos.house schedule - S7";
+
+// Name of sheet that stores supplemental data that can't be obtained from Midos.house
+const S7_SUPPLEMENTAL_SHEET = "Supplemental data - S7";
+
+// Name of sheet that stores our imported schedule data
+const COOP_SCHEDULE_SHEET = "Midos.house schedule - Co-Op S3";
+
+// Name of sheet that stores supplemental data that can't be obtained from Midos.house
+const COOP_SUPPLEMENTAL_SHEET = "Supplemental data - Co-Op S3";
 
 // Range of fields that contain our imported schedule
 const SINGLE_PLAYER_SHEET_RANGE = "A3:P1000";
 
-// Name of sheet that stores supplemental data that can't be obtained from Midos.house
-const S7_SUPPLEMENTAL_SHEET = "Supplemental data";
+// Range of fields that contain our imported schedule
+const COOP_SHEET_RANGE = "A3:Z1000";
 
 // Range of fields that contain our supplemental data
 const SUPPLEMENTAL_SHEET_RANGE = "A2:D1000";
@@ -27,6 +36,7 @@ type SpreadsheetEntryFromMidosHouse<T extends SpreadsheetEntry<any>> = {
 
 function importAllSchedules() {
     importSinglePlayerSchedule("s", "7cc", S7_SCHEDULE_SHEET, S7_SUPPLEMENTAL_SHEET)
+    importCoOpSchedule("coop", "3", COOP_SCHEDULE_SHEET, COOP_SUPPLEMENTAL_SHEET)
 }
 
 function importSinglePlayerSchedule(series: string, event: string, scheduleSheet: string, supplementalSheet: string) {
@@ -59,6 +69,41 @@ function importSinglePlayerSchedule(series: string, event: string, scheduleSheet
 
     // Overwrite entire spreadsheet with output
     saveOutputToSpreadsheet(output, scheduleSheet, SINGLE_PLAYER_SHEET_RANGE, 998, 16);
+}
+
+function importCoOpSchedule(series: string, event: string, scheduleSheet: string, supplementalSheet: string) {
+    const apiKey = PropertiesService.getScriptProperties().getProperty("MIDOS_HOUSE_API_KEY");
+    const mhSchedule = fetchScheduleData(MIDOS_HOUSE_GQL_URL, gqlQuery(series, event), apiKey);
+    const existingSchedule = fetchExistingSchedule(
+        scheduleSheet,
+        SINGLE_PLAYER_SHEET_RANGE,
+        CoOpSpreadsheetEntry.fromSpreadsheetArray
+    );
+    const supplemental = fetchSupplementalData(supplementalSheet, SUPPLEMENTAL_SHEET_RANGE);
+
+    let output = compareMidosHouseAndExistingSchedule(
+        mhSchedule,
+        existingSchedule,
+        CoOpSpreadsheetEntry.fromMidosHouseEntryWithDiscriminator
+    ).map(
+        it => it.withSupplementalData(supplemental.get(it.team1Runner1Id),
+            supplemental.get(it.team1Runner2Id),
+            supplemental.get(it.team2Runner1Id),
+            supplemental.get(it.team2Runner2Id))
+    );
+
+    // Sort output list by stream date/time. Unscheduled races go to end of list.
+    output.sort(function (a, b) {
+        if (!a.scheduledStart && !b.scheduledStart) return 0;
+        else if (!b.scheduledStart) return -1;
+        else if (!a.scheduledStart) return 1;
+        else if (a.scheduledStart < b.scheduledStart) return -1;
+        else if (a.scheduledStart > b.scheduledStart) return 1;
+        else return 0;
+    })
+
+    // Overwrite entire spreadsheet with output
+    saveOutputToSpreadsheet(output, scheduleSheet, COOP_SHEET_RANGE, 998, 26);
 }
 
 function gqlQuery(series: string, event: string) {

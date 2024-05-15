@@ -462,14 +462,7 @@ export class CoOpSpreadsheetEntry extends SpreadsheetEntry<CoOpSpreadsheetEntry>
             scheduleUpdatedAt)
     }
 
-    public override matches(mhEntry: MidosHouseScheduleEntry): boolean {
-        return this.raceDataMatches(mhEntry) &&
-            (!this.scheduledStart && !mhEntry.scheduledStart ||
-                (!!this.scheduledStart && this.scheduledStart.getTime() == mhEntry.scheduledStart?.getTime())) &&
-            this.restreamConsent == mhEntry.restreamConsent
-    }
-
-    public toSpreadsheetArray(): any[] {
+    public override toSpreadsheetArray(): any[] {
         return [
             this.raceId.toString(),
             this.scheduledStart,
@@ -479,25 +472,57 @@ export class CoOpSpreadsheetEntry extends SpreadsheetEntry<CoOpSpreadsheetEntry>
             this.team1Runner1Id,
             this.team1Runner1RacetimeId,
             this.team1Runner1Name,
-            this.team1Runner1Supplemental.country,
+            this.team1Runner1Supplemental?.country,
             this.team1Runner2Id,
             this.team1Runner2RacetimeId,
             this.team1Runner2Name,
-            this.team1Runner2Supplemental.country,
+            this.team1Runner2Supplemental?.country,
             this.team2Id,
             this.team2Name,
             this.team2Runner1Id,
             this.team2Runner1RacetimeId,
             this.team2Runner1Name,
-            this.team2Runner1Supplemental.country,
+            this.team2Runner1Supplemental?.country,
             this.team2Runner2Id,
             this.team2Runner2RacetimeId,
             this.team2Runner2Name,
-            this.team2Runner2Supplemental.country,
+            this.team2Runner2Supplemental?.country,
             this.isCancelled,
             this.restreamConsent,
             this.scheduleUpdatedAt
         ];
+    }
+    public withSupplementalData(t1r1Supplemental?: SupplementalData,
+                                t1r2Supplemental?: SupplementalData,
+                                t2r1Supplemental?: SupplementalData,
+                                t2r2Supplemental?: SupplementalData): CoOpSpreadsheetEntry {
+        return new CoOpSpreadsheetEntry(
+            this.raceId,
+            this.scheduledStart,
+            this.gameName,
+            this.team1Id,
+            this.team1Name,
+            this.team1Runner1Id,
+            this.team1Runner1RacetimeId,
+            this.team1Runner1Name,
+            t1r1Supplemental,
+            this.team1Runner2Id,
+            this.team1Runner2RacetimeId,
+            this.team1Runner2Name,
+            t1r2Supplemental,
+            this.team2Id,
+            this.team2Name,
+            this.team2Runner1Id,
+            this.team2Runner1RacetimeId,
+            this.team2Runner1Name,
+            t2r1Supplemental,
+            this.team2Runner2Id,
+            this.team2Runner2RacetimeId,
+            this.team2Runner2Name,
+            t2r2Supplemental,
+            this.isCancelled,
+            this.restreamConsent,
+            this.scheduleUpdatedAt)
     }
 
     protected override raceDataMatches(mhEntry: MidosHouseScheduleEntry): boolean {
