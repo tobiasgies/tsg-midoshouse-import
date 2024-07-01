@@ -17,6 +17,12 @@ const COOP_SCHEDULE_SHEET = "Midos.house schedule - Co-Op S3";
 // Name of sheet that stores supplemental data that can't be obtained from Midos.house
 const COOP_SUPPLEMENTAL_SHEET = "Supplemental data - Co-Op S3";
 
+// Name of sheet that stores our imported schedule data
+const TFB_SCHEDULE_SHEET = "Midos.house schedule - TFB S3";
+
+// Name of sheet that stores supplemental data that can't be obtained from Midos.house
+const TFB_SUPPLEMENTAL_SHEET = "Supplemental data - TFB S3";
+
 // Range of fields that contain our imported schedule
 const SINGLE_PLAYER_SHEET_RANGE = "A3:P1000";
 
@@ -37,6 +43,7 @@ type SpreadsheetEntryFromMidosHouse<T extends SpreadsheetEntry<any>> = {
 function importAllSchedules() {
     importSinglePlayerSchedule("s", "7cc", S7_SCHEDULE_SHEET, S7_SUPPLEMENTAL_SHEET)
     importCoOpSchedule("coop", "3", COOP_SCHEDULE_SHEET, COOP_SUPPLEMENTAL_SHEET)
+    importSinglePlayerSchedule("tfb", "3", TFB_SCHEDULE_SHEET, TFB_SUPPLEMENTAL_SHEET)
 }
 
 function importSinglePlayerSchedule(series: string, event: string, scheduleSheet: string, supplementalSheet: string) {
