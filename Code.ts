@@ -6,10 +6,10 @@ import {SupplementalData} from "./SupplementalData";
 const MIDOS_HOUSE_GQL_URL = "https://midos.house/api/v1/graphql";
 
 // Name of sheet that stores our imported schedule data
-const S7_SCHEDULE_SHEET = "Midos.house schedule - S7";
+const S8_SCHEDULE_SHEET = "Midos.house schedule - S8";
 
 // Name of sheet that stores supplemental data that can't be obtained from Midos.house
-const S7_SUPPLEMENTAL_SHEET = "Supplemental data - S7";
+const S8_SUPPLEMENTAL_SHEET = "Supplemental data - S8";
 
 // Name of sheet that stores our imported schedule data
 const COOP_SCHEDULE_SHEET = "Midos.house schedule - Co-Op S3";
@@ -41,7 +41,7 @@ type SpreadsheetEntryFromMidosHouse<T extends SpreadsheetEntry<any>> = {
 }
 
 function importAllSchedules() {
-    importSinglePlayerSchedule("s", "7cc", S7_SCHEDULE_SHEET, S7_SUPPLEMENTAL_SHEET)
+    importSinglePlayerSchedule("s", "8cc", S8_SCHEDULE_SHEET, S8_SUPPLEMENTAL_SHEET)
     importCoOpSchedule("coop", "3", COOP_SCHEDULE_SHEET, COOP_SUPPLEMENTAL_SHEET)
     importSinglePlayerSchedule("tfb", "3", TFB_SCHEDULE_SHEET, TFB_SUPPLEMENTAL_SHEET)
 }
